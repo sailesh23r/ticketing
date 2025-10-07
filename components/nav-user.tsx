@@ -2,11 +2,8 @@
 
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
 } from "lucide-react"
 
 import {
@@ -30,29 +27,21 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth-client"
-import { useState } from "react"
+// import { useState } from "react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
-const PRIV_ROLES = new Set([
-  "admin",
-  "it_support",
-  "irt",
-  "security_delegate",
-  "senior_management",
-  "legal",
-  "comms",
-  "external_specialists",
-]);
+// Reserved for future privilege-based UI tweaks
 
 export function NavUser() {
   const { isMobile } = useSidebar();
 
   const { data: session } = authClient.useSession();
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
 
   const email = session?.user?.email ?? "";
   const name = (session?.user as { name?: string } | undefined)?.name ?? "";
-  const role = (session?.user as { role?: string } | undefined)?.role ?? "";
-  const isPrivileged = !!role && PRIV_ROLES.has(role.toLowerCase());
+  // const role = (session?.user as { role?: string } | undefined)?.role ?? "";
+  // const isPrivileged = !!role && PRIV_ROLES.has(role.toLowerCase());
 
   const initial = (name || email || "?").trim().charAt(0).toUpperCase();
 
@@ -112,6 +101,14 @@ export function NavUser() {
               <DropdownMenuItem>
                 <BadgeCheck />
                 Account
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <div className="w-full">
+                  <ThemeToggle />
+                </div>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

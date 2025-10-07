@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
+import { ThemeProvider } from "@/components/theme-provider";
 // import TopNav from "@/components/top-nav";
 import { ToastProvider } from "@/components/ui/toast-provider";
 // import { WebPushInit } from "@/components/web-push-init";
@@ -27,18 +28,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable}  antialiased`}
       >
         {/* <WebPushInit /> */}
         <Toaster richColors />
-        <ToastProvider>
-          <ConvexClientProvider>
-           
-            {children}
-          </ConvexClientProvider>
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <ConvexClientProvider>
+              {children}
+            </ConvexClientProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
