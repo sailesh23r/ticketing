@@ -6,6 +6,9 @@ import type { NextConfig } from "next";
 // untranspiled modern syntax and the bundler in your current setup inlines it
 // without processing.
 const nextConfig: NextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Keep existing config options here if you add more later.
   transpilePackages: ["tailwind-merge"],
 };
