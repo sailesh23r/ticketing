@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER!,
       to,
+      cc: "arung8989@gmail.com",
+      priority: "high",
+      headers: {
+        // Many clients respect these headers
+        "Importance": "High",
+        // Some clients look at this non-standard header
+        "Priority": "urgent",
+      },
       subject: `[Support] ${subject}`,
       text: description,
       html: `<p>${description.replace(/\n/g, "<br/>")}</p>`,
