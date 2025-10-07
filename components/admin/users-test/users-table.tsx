@@ -60,12 +60,22 @@ const fetcher = async (url: string) => {
 
 // (account icon rendering removed temporarily while showing organizations instead)
 
+function extractRoles(session: unknown): string[] {
+  if (session && typeof session === "object" && "roles" in (session as Record<string, unknown>)) {
+    const val = (session as Record<string, unknown>)["roles"];
+    if (Array.isArray(val) && val.every((v) => typeof v === "string")) {
+      return val as string[];
+    }
+  }
+  return [];
+}
+
 export function UsersTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { data: session } = useSession();
-  const isAdminViewer = session?.user?.role === "admin";
+  const isAdminViewer = extractRoles(session).includes("admin");
 
   // Filters and sort state, initialized from URL
   const [role, setRole] = useState(searchParams.get("role") || "all");

@@ -37,7 +37,8 @@ export default function EnableTwoFactor() {
       const accounts = await authClient.listAccounts();
       if ("data" in accounts && accounts.data) {
         const hasCredential = accounts.data.some(
-          (account) => account.provider === "credential",
+          // Better Auth uses `providerId` (e.g., "email", "microsoft")
+          (account) => account.providerId === "email",
         );
         setStep(hasCredential ? "password" : "need-password");
       }

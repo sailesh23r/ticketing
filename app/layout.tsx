@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
-import GlobalNotifications from "@/components/global-notifications";
 // import TopNav from "@/components/top-nav";
 import { ToastProvider } from "@/components/ui/toast-provider";
 // import { WebPushInit } from "@/components/web-push-init";

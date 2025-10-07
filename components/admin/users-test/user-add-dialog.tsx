@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { createUser } from "@/utils/auth";
 import { addTeamMember } from "@/lib/addTeamMember";
 import { useListOrganizations, organization } from "@/lib/auth-client";
-import OrgCombobox from "@/components/comp-230";
+import OrgCombobox from "../../comp-230";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -217,8 +217,7 @@ export function UserAddDialog({
           <OrgCombobox
             organizations={orgsLocal.length ? orgsLocal.map(o => ({ value: o.id, label: o.name })) : undefined}
             value={selectedOrgId}
-            onSelect={(v) => setSelectedOrgId(v || undefined)}
-            onCreate={() => setIsCreateOrgOpen(true)}
+            onValueChange={(v: string) => setSelectedOrgId(v || undefined)}
           />
         </div>
         {isCreateOrgOpen && (

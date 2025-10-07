@@ -59,14 +59,29 @@ export async function createUser(data: {
   email: string;
   password: string;
   role?: "admin" | "provider" | "scribe" | "scribeAdmin" | "demo" | ("admin" | "provider" | "scribe" | "scribeAdmin" | "demo")[];
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   autoVerify?: boolean;
 }) {
   const { autoVerify, ...userData } = data;
 
+  // Map extended UI roles to Better Auth core roles for the user record
+  const toCoreRole = (
+    role: typeof data.role,
+  ): "user" | "admin" | ("user" | "admin")[] | undefined => {
+    if (!role) return undefined;
+    if (Array.isArray(role)) {
+      return role.includes("admin") ? ["admin"] : ["user"];
+    }
+    return role === "admin" ? "admin" : "user";
+  };
+  const coreRole = toCoreRole(data.role);
+
   // If autoVerify is true, add emailVerified to data
   const createData = {
-    ...userData,
+    name: userData.name,
+    email: userData.email,
+    password: userData.password,
+    ...(coreRole ? { role: coreRole } : {}),
     data: {
       ...userData.data,
       ...(autoVerify ? { emailVerified: true } : {}),
@@ -99,10 +114,12 @@ export async function updateUserRole(
   userId: string,
   role: "admin" | "provider" | "scribe" | "scribeAdmin" | "demo" | ("admin" | "provider" | "scribe" | "scribeAdmin" | "demo")[]
 ) {
-  const res = await authClient.admin.setRole({
-    userId,
-    role,
-  });
+  // Map to Better Auth core roles
+  const core: "user" | "admin" | ("user" | "admin")[] = Array.isArray(role)
+    ? (role.includes("admin") ? ["admin"] : ["user"]) 
+    : (role === "admin" ? "admin" : "user");
+
+  const res = await authClient.admin.setRole({ userId, role: core });
 
   if (res?.error) {
     throw new Error(res.error.message || "Failed to update user role");

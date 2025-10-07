@@ -97,8 +97,8 @@ export async function getUsers(
 
   const userIds = result.users.map(u => u.id);
 
-  // Query related tables using Prisma (accounts, sessions, memberships)
-  const [accountsQuery, sessionsQuery, memberships] = await Promise.all([
+  // Query related tables using Prisma (accounts, sessions)
+  const [accountsQuery, sessionsQuery] = await Promise.all([
     prisma.account.findMany({
       select: { userId: true, providerId: true },
       where: { userId: { in: userIds } },
@@ -107,10 +107,6 @@ export async function getUsers(
       select: { userId: true, createdAt: true },
       where: { userId: { in: userIds } },
       orderBy: { createdAt: "asc" },
-    }),
-    prisma.member.findMany({
-      where: { userId: { in: userIds } },
-      select: { userId: true, organization: { select: { id: true, name: true } } },
     }),
   ]);
 
@@ -138,12 +134,8 @@ export async function getUsers(
   );
 
   // Transform the raw data into the format expected by the UsersTable component
-  // Build membership map
-  const organizationsByUser = memberships.reduce((acc, m) => {
-    if (!acc[m.userId]) acc[m.userId] = [];
-    acc[m.userId].push({ id: m.organization.id, name: m.organization.name });
-    return acc;
-  }, {} as Record<string, { id: string; name: string }[]>);
+  // Organizations not available without Better Auth org plugin or dedicated models
+  const organizationsByUser: Record<string, { id: string; name: string }[]> = {};
 
   const users: UserWithDetails[] = result.users.map((user) => {
     const accounts = accountsByUser[user.id] || [];

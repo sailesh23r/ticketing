@@ -10,7 +10,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { updateUserDetails } from "@/lib/updateUser";
 import { updateUserRole } from "@/utils/auth";
 import type { UserWithDetails } from "@/utils/users";
-import OrgCombobox from "@/components/comp-230";
+import OrgCombobox from "../../comp-230";
 import { useListOrganizations, organization } from "@/lib/auth-client";
 import { addTeamMember, AllowedRole } from "@/lib/addTeamMember";
 import { toast } from "sonner";
@@ -192,8 +192,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                     <OrgCombobox
                       organizations={orgsLocal.map(o => ({ value: o.id, label: o.name }))}
                       value={selectedOrgId}
-                      onSelect={(v) => setSelectedOrgId(v || undefined)}
-                      onCreate={() => { setCreatingOrg(true); setNewOrgName(""); }}
+                      onValueChange={(v: string) => setSelectedOrgId(v || undefined)}
                     />
                   )}
                   {creatingOrg && (
