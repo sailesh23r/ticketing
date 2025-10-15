@@ -137,6 +137,16 @@ export const createTicket = mutation({
     });
 
     await createNotifications(ctx, ticketId, args.priority, "Ticket created", `Your ticket ${ticketId} has been created.`);
+    // Fire-and-forget Teams notification if configured
+    try {
+      await ctx.scheduler.runAfter(0, api.teams.send, {
+        title: `Ticket ${ticketId} created (${args.priority})`,
+        body: args.title,
+        url: `/tickets/${ticketId}`,
+        project: args.project ?? undefined,
+        team: assignedToGroup ?? undefined,
+      });
+    } catch {}
     // Kick off embedding generation (non-blocking)
     try {
       await ctx.scheduler.runAfter(0, api.embeddings.generateTicketEmbedding, { ticketId });
@@ -156,6 +166,8 @@ export const listTicketsPage = query({
     status: v.optional(v.union(
       v.literal("open"),
       v.literal("in_progress"),
+      v.literal("in_development"),
+      v.literal("missing_information"),
       v.literal("resolved"),
       v.literal("closed"),
       v.literal("escalated"),
@@ -252,6 +264,51 @@ function newRecipientsForLevel(level: number): string[] {
       return []; // level 0 (initial) no added recipients beyond assigned / creator
   }
 }
+
+export const setTicketPriority = mutation({
+  args: {
+    ticketId: v.string(),
+    priority: v.union(v.literal("P0"), v.literal("P1"), v.literal("P2"), v.literal("P3")),
+    userId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireIdentity(ctx);
+    const actorId = (args.userId && args.userId.trim()) || identity.subject;
+
+    const t = await ctx.db
+      .query("tickets")
+      .withIndex("by_ticketId", (q) => q.eq("ticketId", args.ticketId))
+      .first();
+    if (!t) throw new Error("Ticket not found");
+
+    const roles = await userRoles(ctx, actorId);
+
+    let inAssignedTeam = false;
+    if (t.assignedToGroup) {
+      const me = await ctx.db
+        .query("users")
+        .withIndex("by_authUserId", (q) => q.eq("authUserId", actorId))
+        .first();
+      const teams = (me?.teams ?? []).map((tm) => tm.toLowerCase());
+      inAssignedTeam = teams.includes((t.assignedToGroup || "").toLowerCase());
+    }
+
+    const actorIsPrivileged = isPrivileged(roles);
+    const actorIsAssignee = t.assignedToUser === actorId;
+    if (!actorIsPrivileged && !actorIsAssignee && !inAssignedTeam) {
+      console.log(`[Forbidden] action=setTicketPriority denied actor=${actorId} ticketId=${args.ticketId}`);
+      throw new Error("Forbidden");
+    }
+
+    await ctx.db.patch(t._id, { priority: args.priority, updatedAt: Date.now() });
+    await ctx.db.insert("ticket_events", {
+      ticketId: t.ticketId,
+      type: "priority_changed",
+      actorId,
+      details: JSON.stringify({ from: t.priority, to: args.priority }),
+    });
+  },
+});
 
 export const addMessage = mutation({
   args: {
@@ -556,6 +613,8 @@ export const listTicketsPaginated = query({
     status: v.optional(v.union(
       v.literal("open"),
       v.literal("in_progress"),
+      v.literal("in_development"),
+      v.literal("missing_information"),
       v.literal("resolved"),
       v.literal("closed"),
       v.literal("escalated"),
@@ -649,6 +708,8 @@ export const getAllTickets = query({
       v.union(
         v.literal("open"),
         v.literal("in_progress"),
+        v.literal("in_development"),
+        v.literal("missing_information"),
         v.literal("resolved"),
         v.literal("closed"),
         v.literal("escalated"),
@@ -728,6 +789,8 @@ export const getTicketStats = query({
       total: all.length,
       open: all.filter((t) => t.status === "open").length,
       inProgress: all.filter((t) => t.status === "in_progress").length,
+      inDevelopment: all.filter((t) => t.status === "in_development").length,
+      missingInformation: all.filter((t) => t.status === "missing_information").length,
       escalated: all.filter((t) => t.status === "escalated").length,
       resolved: all.filter((t) => t.status === "resolved").length,
       closed: all.filter((t) => t.status === "closed").length,
@@ -837,6 +900,16 @@ export const escalateIfDue = mutation({
         // ignore push errors
       }
     }
+    // Teams channel notification (best-effort)
+    try {
+      await ctx.scheduler.runAfter(0, api.teams.send, {
+        title,
+        body,
+        url: `/tickets/${t.ticketId}`,
+        project: (t as unknown as { project?: string }).project ?? undefined,
+        team: t.assignedToGroup ?? undefined,
+      });
+    } catch {}
     return { changed: true };
   },
 });
@@ -921,6 +994,16 @@ export const autoRaisePriorityIfDue = mutation({
         meta: { ticketId: t.ticketId, priorityFrom: currentPriority, priorityTo: elevated },
       });
     }
+    // Teams channel notification (best-effort)
+    try {
+      await ctx.scheduler.runAfter(0, api.teams.send, {
+        title,
+        body,
+        url: `/tickets/${t.ticketId}`,
+        project: (t as unknown as { project?: string }).project ?? undefined,
+        team: newGroup,
+      });
+    } catch {}
 
     return { changed: true, newPriority: elevated, newGroup, newDueAt };
   },
@@ -1106,6 +1189,8 @@ export const setTicketStatus = mutation({
     status: v.union(
       v.literal("open"),
       v.literal("in_progress"),
+      v.literal("in_development"),
+      v.literal("missing_information"),
       v.literal("resolved"),
       v.literal("closed"),
       v.literal("escalated"),
@@ -1150,7 +1235,7 @@ export const setTicketStatus = mutation({
       patch.dueAt = undefined as unknown as number; // remove field
     }
 
-    await ctx.db.patch(t._id, { status: args.status, updatedAt: Date.now() });
+  await ctx.db.patch(t._id, { status: args.status, updatedAt: Date.now() });
 
     await ctx.db.insert("ticket_events", {
       ticketId: t.ticketId,
@@ -1197,6 +1282,16 @@ export const setTicketStatus = mutation({
     } catch (e) {
       console.log('schedule web push failed', e);
     }
+    // Teams message (best-effort)
+    try {
+      await ctx.scheduler.runAfter(0, api.teams.send, {
+        title: `Ticket ${t.ticketId} updated`,
+        body: `Status changed to ${args.status.replace("_", " ")}`,
+        url: `/tickets/${t.ticketId}`,
+        project: (t as unknown as { project?: string }).project ?? undefined,
+        team: t.assignedToGroup ?? undefined,
+      });
+    } catch {}
   },
 });
 

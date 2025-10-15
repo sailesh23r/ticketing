@@ -1,6 +1,67 @@
+import { action } from "./_generated/server";
+import { v } from "convex/values";
+
+// Send a simple Teams message card to an Incoming Webhook.
+// Configure environment variables:
+// - TEAMS_WEBHOOK_URL (default)
+// - TEAMS_WEBHOOK_URL_<PROJECT_SLUG_UPPER> (optional per project)
+// - TEAMS_WEBHOOK_URL_TEAM_<TEAM_SLUG_UPPER> (optional per team)
+// Project/team slugs are sanitized to [A-Z0-9_].
+export const send = action({
+  args: {
+    title: v.string(),
+    body: v.optional(v.string()),
+    url: v.optional(v.string()),
+    project: v.optional(v.string()),
+    team: v.optional(v.string()),
+  },
+  handler: async (_ctx, args) => {
+    // Build env var keys by priority: per project, per team, default
+    function sanitize(name?: string | null) {
+      if (!name) return undefined;
+      return name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+    const projectKey = sanitize(args.project);
+    const teamKey = sanitize(args.team);
+    const perProject = projectKey ? process.env[`TEAMS_WEBHOOK_URL_${projectKey}`] : undefined;
+    const perTeam = teamKey ? process.env[`TEAMS_WEBHOOK_URL_TEAM_${teamKey}`] : undefined;
+    const fallback = process.env.TEAMS_WEBHOOK_URL;
+    const webhook = perProject || perTeam || fallback;
+    if (!webhook) {
+      // No webhook configured; skip silently
+      return { ok: false, reason: "no_webhook_configured" } as const;
+    }
+
+    const linkMd = args.url ? `\n\n[Open](${args.url})` : "";
+    // Office 365 Connector Card (MessageCard) schema (simple, widely supported)
+    const payload = {
+      "@type": "MessageCard",
+      "@context": "https://schema.org/extensions",
+      summary: args.title,
+      themeColor: "0078D7",
+      title: args.title,
+      text: `${args.body ?? ""}${linkMd}`.trim(),
+    };
+
+    try {
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const ok = res.ok;
+      return { ok, status: res.status } as const;
+    } catch (e) {
+      console.log("[teams.send] error", e);
+      return { ok: false, reason: "network_error" } as const;
+    }
+  },
+});
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
 
 function slugify(name: string) {
   return name

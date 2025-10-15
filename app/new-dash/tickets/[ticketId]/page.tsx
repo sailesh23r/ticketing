@@ -101,6 +101,7 @@ export default function TicketThreadPage() {
   const similarTickets = useAction(api.embeddings.similarTicketsForTicket);
   const me = useQuery(api.users.getByAuthId, { authUserId: userId ?? "" });
   const setStatus = useMutation(api.myFunctions.setTicketStatus);
+  const setPriority = useMutation(api.myFunctions.setTicketPriority);
   const assignTicket = useMutation(api.myFunctions.assignTicket);
   const changeProject = useMutation(api.myFunctions.changeProject);
   const assignToGroup = useMutation(api.myFunctions.assignToGroup);
@@ -270,7 +271,7 @@ export default function TicketThreadPage() {
                 <Select
                   onValueChange={async (val: string) => {
                     try {
-                      await setStatus({ ticketId: t.ticketId, status: val as 'open' | 'in_progress' | 'resolved' | 'closed' });
+                      await setStatus({ ticketId: t.ticketId, status: val as 'open'|'in_progress'|'in_development'|'missing_information'|'resolved'|'closed'|'escalated' });
                       toast.success('Status updated', { description: `Status set to ${val}` });
                     } catch {
                       toast.error('Forbidden', { description: 'You are not allowed to update status' });
@@ -282,6 +283,8 @@ export default function TicketThreadPage() {
                     const statusMeta: Record<string, { trigger: string; dot: string; label: string }> = {
                       open: { trigger: 'bg-red-100 text-red-800 border-red-200', dot: 'bg-red-500', label: 'Open' },
                       in_progress: { trigger: 'bg-blue-100 text-blue-800 border-blue-200', dot: 'bg-blue-500', label: 'In Progress' },
+                      in_development: { trigger: 'bg-indigo-100 text-indigo-800 border-indigo-200', dot: 'bg-indigo-500', label: 'In Development' },
+                      missing_information: { trigger: 'bg-orange-100 text-orange-800 border-orange-200', dot: 'bg-orange-500', label: 'Missing Information' },
                       resolved: { trigger: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500', label: 'Resolved' },
                       closed: { trigger: 'bg-gray-100 text-gray-800 border-gray-200', dot: 'bg-gray-500', label: 'Closed' },
                     };
@@ -300,6 +303,8 @@ export default function TicketThreadPage() {
                     {[
                       { value: 'open', label: 'Open', dot: 'bg-red-500' },
                       { value: 'in_progress', label: 'In Progress', dot: 'bg-blue-500' },
+                      { value: 'in_development', label: 'In Development', dot: 'bg-indigo-500' },
+                      { value: 'missing_information', label: 'Missing Information', dot: 'bg-orange-500' },
                       { value: 'resolved', label: 'Resolved', dot: 'bg-green-500' },
                       { value: 'closed', label: 'Closed', dot: 'bg-gray-500' },
                     ].map((s) => (
@@ -316,12 +321,45 @@ export default function TicketThreadPage() {
               {/* Priority */}
               <div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">Priority</div>
-                <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${(() => {
-                  const map: Record<string, string> = { P0: 'bg-red-100 text-red-800 border-red-200', P1: 'bg-orange-100 text-orange-800 border-orange-200', P2: 'bg-yellow-100 text-yellow-800 border-yellow-200', P3: 'bg-green-100 text-green-800 border-green-200' };
-                  return map[t.priority ?? ''] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-                })()}`}>
-                  {({ P0: 'urgent', P1: 'high', P2: 'medium', P3: 'low' } as Record<string, string>)[t.priority ?? ''] ?? t.priority ?? '—'}
-                </span>
+                <Select
+                  onValueChange={async (val: string) => {
+                    try {
+                      await setPriority({ ticketId: t.ticketId, priority: val as 'P0'|'P1'|'P2'|'P3' });
+                      toast.success('Priority updated', { description: `Priority set to ${val}` });
+                    } catch {
+                      toast.error('Forbidden', { description: 'You are not allowed to update priority' });
+                    }
+                  }}
+                  value={t.priority ?? undefined}
+                >
+                  {(() => {
+                    const metaMap: Record<string, { cls: string; label: string }> = {
+                      P0: { cls: 'bg-red-100 text-red-800 border-red-200', label: 'Critical' },
+                      P1: { cls: 'bg-orange-100 text-orange-800 border-orange-200', label: 'High' },
+                      P2: { cls: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Medium' },
+                      P3: { cls: 'bg-green-100 text-green-800 border-green-200', label: 'Low' },
+                    };
+                    const meta = t.priority ? metaMap[t.priority] : undefined;
+                    const label = meta?.label ?? 'Select priority';
+                    return (
+                      <SelectTrigger className={`w-full ${meta ? `border ${meta.cls}` : ''}`}>
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="truncate">{label}</span>
+                        </div>
+                      </SelectTrigger>
+                    );
+                  })()}
+                  <SelectContent>
+                    {[
+                      { value: 'P0', label: 'Critical' },
+                      { value: 'P1', label: 'High' },
+                      { value: 'P2', label: 'Medium' },
+                      { value: 'P3', label: 'Low' },
+                    ].map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {/* Project */}
               <div>
@@ -521,6 +559,8 @@ function ActivityTimeline({ events, authors }: { events: ThreadEvent[]; authors?
     const map: Record<string, string> = {
       open: 'Open',
       in_progress: 'In progress',
+      in_development: 'In development',
+      missing_information: 'Missing information',
       escalated: 'Escalated',
       resolved: 'Resolved',
       closed: 'Closed'
@@ -667,6 +707,8 @@ function ActivityTimeline({ events, authors }: { events: ThreadEvent[]; authors?
     const statusClasses: Record<string, string> = {
       open: 'text-red-600 dark:text-red-400',
       'in progress': 'text-blue-600 dark:text-blue-400',
+      'in development': 'text-indigo-600 dark:text-indigo-400',
+      'missing information': 'text-orange-600 dark:text-orange-400',
       escalated: 'text-fuchsia-600 dark:text-fuchsia-400',
       resolved: 'text-green-600 dark:text-green-400',
       closed: 'text-gray-600 dark:text-gray-400'
@@ -683,7 +725,9 @@ function ActivityTimeline({ events, authors }: { events: ThreadEvent[]; authors?
       const commonCls = 'w-3 h-3';
       switch (v) {
         case 'open': return <CircleDot className={commonCls} />;
-        case 'in progress': return <Activity className={commonCls} />;
+  case 'in progress': return <Activity className={commonCls} />;
+  case 'in development': return <Activity className={commonCls} />;
+  case 'missing information': return <AlertTriangle className={commonCls} />;
         case 'escalated': return <AlertTriangle className={commonCls} />;
         case 'resolved': return <CheckCircle2 className={commonCls} />;
         case 'closed': return <XCircle className={commonCls} />;

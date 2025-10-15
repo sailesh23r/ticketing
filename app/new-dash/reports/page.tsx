@@ -96,7 +96,7 @@ export default function ReportsPage() {
   }, [rows]);
 
   const priorityMap: Record<string, { label: string; cls: string }> = { P0:{label:'Critical',cls:'bg-red-400/20 text-red-700 border border-red-300'}, P1:{label:'High',cls:'bg-orange-400/20 text-orange-700 border border-orange-300'}, P2:{label:'Medium',cls:'bg-amber-400/20 text-amber-700 border border-amber-300'}, P3:{label:'Low',cls:'bg-emerald-500/15 text-emerald-700 border border-emerald-300'} };
-  const statusMap: Record<string, { label: string; cls: string }> = { open:{label:'Open',cls:'bg-red-500/15 text-red-700 border border-red-300'}, in_progress:{label:'In progress',cls:'bg-blue-500/15 text-blue-700 border border-blue-300'}, escalated:{label:'Escalated',cls:'bg-fuchsia-600/80 text-white'}, resolved:{label:'Resolved',cls:'bg-green-500/15 text-green-700 border border-green-300'}, closed:{label:'Closed',cls:'bg-gray-500/20 text-gray-700 border border-gray-300'} };
+  const statusMap: Record<string, { label: string; cls: string }> = { open:{label:'Open',cls:'bg-red-500/15 text-red-700 border border-red-300'}, in_progress:{label:'In progress',cls:'bg-blue-500/15 text-blue-700 border border-blue-300'}, in_development:{label:'In development',cls:'bg-indigo-500/15 text-indigo-700 border border-indigo-300'}, missing_information:{label:'Missing information',cls:'bg-orange-500/15 text-orange-700 border border-orange-300'}, escalated:{label:'Escalated',cls:'bg-fuchsia-600/80 text-white'}, resolved:{label:'Resolved',cls:'bg-green-500/15 text-green-700 border border-green-300'}, closed:{label:'Closed',cls:'bg-gray-500/20 text-gray-700 border border-gray-300'} };
   const allStatuses = Object.keys(statusMap);
   const allPriorities = Object.keys(priorityMap);
 

@@ -1,3 +1,22 @@
+Convex backend overview
+
+- Teams notifications: configure one of these environment variables in your deployment to enable messages to a Microsoft Teams channel via an Incoming Webhook.
+  - TEAMS_WEBHOOK_URL (fallback for all messages)
+  - TEAMS_WEBHOOK_URL_<PROJECT_SLUG_UPPER>
+  - TEAMS_WEBHOOK_URL_TEAM_<TEAM_SLUG_UPPER>
+    - Example: for project slug "alpha" set TEAMS_WEBHOOK_URL_ALPHA
+    - Example: for team name "IT Support" set TEAMS_WEBHOOK_URL_TEAM_IT_SUPPORT
+
+Events that emit Teams messages (best-effort, non-blocking):
+- Ticket created
+- Ticket escalated (SLA breach chain)
+- Priority auto-raised (SLA)
+- Status changed
+
+Web push delivery:
+- Subscriptions are accepted at POST /api/web-push/register and stored in .data/subscriptions.json
+- Convex action webPush.send calls the Next API /api/web-push/send to fan-out notifications.
+- Configure VAPID keys using WEBPUSH_VAPID_PUBLIC/WEBPUSH_VAPID_PRIVATE or VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY.
 # Welcome to your Convex functions directory!
 
 Write your Convex functions here.

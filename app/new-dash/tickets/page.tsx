@@ -38,7 +38,7 @@ export default function TicketsDashboardList() {
   // Filter state
   const [search, setSearch] = useState("");
   const [filterPriority, setFilterPriority] = useState<"all" | "P0" | "P1" | "P2" | "P3">("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "escalated" | "resolved" | "closed">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "in_development" | "missing_information" | "escalated" | "resolved" | "closed">("all");
   const [filterProject, setFilterProject] = useState<string | "all">("all");
   const [filterTeam, setFilterTeam] = useState<string | "all">("all");
 
@@ -205,6 +205,8 @@ export default function TicketsDashboardList() {
                 <SelectItem value="all">Status</SelectItem>
                 <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="in_progress">In progress</SelectItem>
+                <SelectItem value="in_development">In development</SelectItem>
+                <SelectItem value="missing_information">Missing information</SelectItem>
                 <SelectItem value="escalated">Escalated</SelectItem>
                 <SelectItem value="resolved">Resolved</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
@@ -280,6 +282,8 @@ export default function TicketsDashboardList() {
                 const statusColorMap: Record<string, string> = {
                   open: 'bg-red-500/15 text-red-700 border border-red-300',
                   in_progress: 'bg-blue-500/15 text-blue-700 border border-blue-300',
+                  in_development: 'bg-indigo-500/15 text-indigo-700 border border-indigo-300',
+                  missing_information: 'bg-orange-500/15 text-orange-700 border border-orange-300',
                   escalated: 'bg-fuchsia-600/80 text-white',
                   resolved: 'bg-green-500/15 text-green-700 border border-green-300',
                   closed: 'bg-gray-500/20 text-gray-700 border border-gray-300'
@@ -287,6 +291,8 @@ export default function TicketsDashboardList() {
                 const statusLabelMap: Record<string, string> = {
                   open: 'Open',
                   in_progress: 'In progress',
+                  in_development: 'In development',
+                  missing_information: 'Missing information',
                   escalated: 'Escalated',
                   resolved: 'Resolved',
                   closed: 'Closed'

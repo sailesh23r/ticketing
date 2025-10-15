@@ -74,8 +74,10 @@ export default function SharedReportClient({ token }: { token: string }) {
     open: { label: 'Open', cls: 'bg-red-500/15 text-red-700 border border-red-300' },
     in_progress: { label: 'In progress', cls: 'bg-blue-500/15 text-blue-700 border border-blue-300' },
     escalated: { label: 'Escalated', cls: 'bg-fuchsia-600/80 text-white' },
-    resolved: { label: 'Resolved', cls: 'bg-green-500/15 text-green-700 border border-green-300' },
-    closed: { label: 'Closed', cls: 'bg-gray-500/20 text-gray-700 border border-gray-300' },
+  in_development: { label: 'In development', cls: 'bg-indigo-500/15 text-indigo-700 border border-indigo-300' },
+  missing_information: { label: 'Missing information', cls: 'bg-orange-500/15 text-orange-700 border border-orange-300' },
+  resolved: { label: 'Resolved', cls: 'bg-green-500/15 text-green-700 border border-green-300' },
+  closed: { label: 'Closed', cls: 'bg-gray-500/20 text-gray-700 border border-gray-300' },
   };
   const priorityDotMap: Record<string,string> = { P0:'bg-red-500', P1:'bg-orange-500', P2:'bg-amber-400', P3:'bg-emerald-500' };
   const statusDotMap: Record<string,string> = { open:'bg-red-500', in_progress:'bg-blue-500', escalated:'bg-fuchsia-600', resolved:'bg-green-500', closed:'bg-gray-500' };

@@ -49,6 +49,8 @@ export default defineSchema({
     status: v.union(
       v.literal("open"),
       v.literal("in_progress"),
+      v.literal("in_development"),
+      v.literal("missing_information"),
       v.literal("resolved"),
       v.literal("closed"),
       v.literal("escalated"),

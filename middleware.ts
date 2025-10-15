@@ -45,6 +45,10 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/login") {
     return NextResponse.next();
   }
+  // Temporarily allow registration page without auth
+  if (pathname === "/register") {
+    return NextResponse.next();
+  }
   // After login, land on /new-dash
   loginUrl.searchParams.set("callbackUrl", "/new-dash");
   return NextResponse.redirect(loginUrl);
