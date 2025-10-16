@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
@@ -25,6 +26,7 @@ interface SectionCardsNewProps {
 }
 
 export function SectionCardsNew(props: SectionCardsNewProps = {}) {
+  const router = useRouter();
   const [localProject, setLocalProject] = useState<string | undefined>();
   const projectFilter = props.project !== undefined ? props.project : localProject;
   const [range, setRange] = useState<"7d" | "30d" | "90d">("7d"); // placeholder (future server usage)
@@ -73,12 +75,24 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
     
 
       {/* Total Tickets */}
-      <Card className="@container/card bg-primary text-primary-foreground">
+      <Card
+        className="@container/card bg-primary text-primary-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-foreground/30"
+        role="button"
+        tabIndex={0}
+        aria-label="View all tickets"
+        onClick={() => router.push('/new-dash/tickets')}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push('/new-dash/tickets'); } }}
+      >
         <CardHeader>
             <CardDescription className="mt-2 text-background font-medium text-base">Total Tickets{projectFilter ? ` • ${projectFilter}` : ""}</CardDescription>
-            <CardAction>
+            <CardAction
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
               <Select value={range} onValueChange={(v: "7d" | "30d" | "90d") => setRange(v)}>
-                <SelectTrigger size="sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger size="sm" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="7d">Last 7 days</SelectItem>
                   <SelectItem value="30d">Last 30 days</SelectItem>

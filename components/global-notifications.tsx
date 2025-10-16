@@ -8,6 +8,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { subscribeUser } from "@/lib/subscribeUser";
 
 interface NotificationRow {
   _id: Id<"notifications">;
@@ -25,6 +26,10 @@ export default function GlobalNotifications() {
   const unread = (notifications || []).filter(n => !n.read);
   const [open, setOpen] = React.useState(false);
   const [bulkBusy, setBulkBusy] = React.useState(false);
+  const [pushSupported, setPushSupported] = React.useState<boolean>(false);
+  const [notifPermission, setNotifPermission] = React.useState<NotificationPermission>("default");
+  const [isSubscribed, setIsSubscribed] = React.useState<boolean>(false);
+  const [enableBusy, setEnableBusy] = React.useState<boolean>(false);
 
   async function markAll() {
     if (!notifications) return;
@@ -34,6 +39,56 @@ export default function GlobalNotifications() {
       await Promise.all(unreadIds.map(id => markRead({ id })));
     } finally {
       setBulkBusy(false);
+    }
+  }
+
+  // Detect support, permission, and existing subscription
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const supported = typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+      if (!mounted) return;
+      setPushSupported(supported);
+      if (!supported) return;
+      setNotifPermission(Notification.permission);
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const ready = reg || (await navigator.serviceWorker.ready);
+        const sub = await ready.pushManager.getSubscription();
+        if (!mounted) return;
+        setIsSubscribed(!!sub);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { mounted = false };
+  }, []);
+
+  async function handleEnablePush() {
+    if (!pushSupported) return;
+    try {
+      setEnableBusy(true);
+      // Ask notification permission first
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm !== 'granted') return;
+      const vapid = process.env.NEXT_PUBLIC_WEBPUSH_VAPID;
+      if (!vapid) {
+        console.warn('Missing NEXT_PUBLIC_WEBPUSH_VAPID');
+        return;
+      }
+      const subscription = await subscribeUser(vapid);
+      // Send to server to register
+      await fetch('/api/web-push/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription }),
+      });
+      setIsSubscribed(true);
+    } catch (e) {
+      console.error('Enable push failed', e);
+    } finally {
+      setEnableBusy(false);
     }
   }
 
@@ -61,6 +116,19 @@ export default function GlobalNotifications() {
           <div className="flex items-center justify-between border-b px-3 py-2">
             <div className="text-xs font-medium">Notifications</div>
             <div className="flex items-center gap-2">
+              {pushSupported && !isSubscribed && notifPermission !== 'denied' && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-6 px-2 text-[11px]"
+                  disabled={enableBusy}
+                  onClick={handleEnablePush}
+                  title={process.env.NEXT_PUBLIC_WEBPUSH_VAPID ? '' : 'Missing VAPID key'}
+                >
+                  {enableBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                  <span className="ml-1">Enable push</span>
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
