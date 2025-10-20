@@ -3,16 +3,22 @@ import useSWR from "swr";
 import { adminClient, customSessionClient, jwtClient, lastLoginMethodClient, twoFactorClient } from "better-auth/client/plugins"
 import type { auth } from "@/lib/auth";
 
+// Prefer using same-origin in browser; allow override via NEXT_PUBLIC_AUTH_BASE_URL
+const resolvedBaseUrl =
+    typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_AUTH_BASE_URL;
+
 export const authClient = createAuthClient({
-    /** The base URL of the server (optional if you're using the same domain) */
-    baseURL: "http://localhost:3000",
+    // If undefined on server, the client will use relative paths at runtime
+    baseURL: resolvedBaseUrl,
     plugins: [
         adminClient(),
         customSessionClient<typeof auth>(),
         twoFactorClient(),
         jwtClient(),
         lastLoginMethodClient(),
-    ]
+    ],
 });
 
 // Lightweight type to match our API response

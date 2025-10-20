@@ -1,12 +1,13 @@
 module.exports = {
   apps: [
     {
-      name: "nextjs-app",
+      name: "ticketing-next",
       // Run from your actual Next.js project directory
-      cwd: "C:/Users/Test.HMI-TEST-PC/Downloads/ticketing-system/front",
+      cwd: "C:/Users/Jibin/Downloads/ticketing system/new",
       // Use Next.js binary directly (more reliable than wrapping via npm on Windows)
       script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000",
+      // Bind to all interfaces so it's reachable on LAN
+      args: "start -p 3000 -H 0.0.0.0",
       instances: 1,
       exec_mode: "fork",
       watch: false,

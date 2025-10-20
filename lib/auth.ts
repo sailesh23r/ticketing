@@ -12,6 +12,26 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql", // only for auth
   }),
+  // We are serving over HTTP on LAN; make cookies work without HTTPS
+  advanced: {
+    defaultCookieAttributes: {
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+    },
+  },
+  // Allow token/JWKS requests from these origins (CORS + origin validation)
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_AUTH_BASE_URL,
+    // Common local dev hosts
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    // LAN IPs we use on this machine
+    `http://${process.env.LAN_HOST ?? "192.168.18.2"}:3000`,
+    // Retain the previous WSL/virtual adapter just in case
+    "http://172.31.128.1:3000",
+  ].filter(Boolean) as string[],
   emailAndPassword: {
     enabled: true,
   },

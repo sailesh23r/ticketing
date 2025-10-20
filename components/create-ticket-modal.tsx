@@ -40,9 +40,9 @@ export function CreateTicketModal({ compact = false }: { compact?: boolean }) {
   const projectList = (me?.projects ?? []) as string[];
   const teamsQuery = useQuery(api.teams.listAll, {});
   const teamOptions = useMemo(() => {
-    const builtIns = ["IT Support", "IRT", "IRT+Senior", "Exec Escalation"];
+    // const builtIns = ["IT Support", "IRT", "IRT+Senior", "Exec Escalation"];
     const names = Array.isArray(teamsQuery) ? (teamsQuery as Array<{ name?: string }>).map(t => t.name).filter(Boolean) as string[] : [];
-    const set = new Set<string>([...builtIns, ...names]);
+    const set = new Set<string>([...names]);
     return Array.from(set);
   }, [teamsQuery]);
 

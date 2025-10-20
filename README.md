@@ -1,40 +1,117 @@
-# Welcome to your Convex + Next.js app
+# XLTER Ticketing System (Next.js + Convex + Better Auth)
 
-This is a [Convex](https://convex.dev/) project created with [`npm create convex`](https://www.npmjs.com/package/create-convex).
+Production-ready setup for a LAN-accessible ticketing system with:
 
-After the initial setup (<2 minutes) you'll have a working full-stack app using:
+- Next.js App Router + TypeScript + shadcn/ui
+- Better Auth (email/password, 2FA, Microsoft OAuth, JWT ES256)
+- Convex (self-hosted via Docker) for data + server logic
+- PM2 for Windows process management
 
-- Convex as your backend (database, server logic)
-- [React](https://react.dev/) as your frontend (web page interactivity)
-- [Next.js](https://nextjs.org/) for optimized web hosting and page routing
-- [Tailwind](https://tailwindcss.com/) for building great looking accessible UI
+This guide is tuned for Windows 10/11 and makes the app reachable from other devices on your Wi‑Fi.
 
-## Get started
+## Quick start (Windows)
 
-If you just cloned this codebase and didn't use `npm create convex`, run:
+1) Prereqs
 
-```
-npm install
-npm run dev
-```
+- Install Git, Node.js 18+ (or 20.x), npm, Docker Desktop (WSL2 backend)
+- Optional: Postgres if you run auth DB locally
 
-If you're reading this README on GitHub and want to use this template, run:
+2) Clone & install
 
 ```
-npm create convex@latest -- -t nextjs
+git clone <your-repo-url>
+cd ticketing system/new
+npm ci
 ```
 
-## Learn more
+3) Configure LAN IP automatically
 
-To learn more about developing your project with Convex, check out:
+```
+cd ..
+./scripts/setup.ps1 -UpdateDev -UpdateCwd
+```
 
-- The [Tour of Convex](https://docs.convex.dev/get-started) for a thorough introduction to Convex principles.
-- The rest of [Convex docs](https://docs.convex.dev/) to learn about all Convex features.
-- [Stack](https://stack.convex.dev/) for in-depth articles on advanced topics.
+- Pass `-Ip 192.168.x.x` to override auto-detection
+- `-UpdateCwd` updates `new/ecosystem.config.js` cwd to the current path
+- This updates: `/.env`, `/new/.env.production.local`, and `/new/.env.local` (dev)
 
-## Join the community
+4) Start Convex backend (Docker)
 
-Join thousands of developers building full-stack apps with Convex:
+```
+docker compose up -d
+```
 
-- Join the [Convex Discord community](https://convex.dev/community) to get help in real-time.
-- Follow [Convex on GitHub](https://github.com/get-convex/), star and contribute to the open-source implementation of Convex.
+5) Build & run Next.js
+
+Option A: PM2 (recommended)
+
+```
+cd new
+npm run build
+npx pm2 start ecosystem.config.js --update-env
+```
+
+Option B: Plain Next.js
+
+```
+cd new
+npm run build
+npm run start
+```
+
+6) Open from another device on Wi‑Fi
+
+- App: `http://<YOUR_PC_IP>:3000`
+- Convex health: `http://<YOUR_PC_IP>:3210/version`
+- Convex dashboard: `http://<YOUR_PC_IP>:6791`
+
+If Windows prompts about firewall, allow access. Or add rules (Admin PowerShell) for ports 3000/3210/6791.
+
+## Environment variables
+
+Key files you’ll customize per machine/IP:
+
+- `/.env` (root): Convex Docker + JWT + public origins
+- `/new/.env.production.local`: Next + Better Auth + public Convex URL
+- `/new/.env.local` (dev): Optional, align to the same IP for npm run dev
+
+The setup script writes typical values like:
+
+- `AUTH_JWT_ISSUER/AUDIENCE/JWKS` -> `http://<IP>:3000`
+- `NEXT_PUBLIC_CONVEX_URL` -> `http://<IP>:3210`
+- `BETTER_AUTH_TRUSTED_ORIGINS` includes the LAN origin
+
+## PM2 notes (Windows)
+
+- Edit `new/ecosystem.config.js` and set `cwd` to your actual path
+- It binds `-H 0.0.0.0` so the app is reachable over LAN
+- Restart after env changes: `npx pm2 restart ecosystem.config.js --update-env`
+
+## Troubleshooting
+
+- App opens but no Convex data:
+	- In DevTools → Network: `/api/auth/token` must be 200 with `{ token }`
+	- Calls to `http://<IP>:3210` should be 200 (not 401/403)
+	- If logs show `Invalid origin http://<IP>:3000`, add it to `BETTER_AUTH_TRUSTED_ORIGINS` or `trustedOrigins` in `new/lib/auth.ts`, rebuild, restart
+
+- Convex health OK but app can’t reach it:
+	- Check `NEXT_PUBLIC_CONVEX_URL` points to `http://<IP>:3210`
+	- Ensure Windows Firewall allows 3210 inbound
+
+- Cookies/session issues over HTTP:
+	- We set `secure: false; sameSite: "lax"` in `new/lib/auth.ts` for LAN HTTP
+	- For HTTPS, set `secure: true` and `SameSite=None`, and serve over TLS
+
+- New machine / IP changed:
+	- Re-run `./scripts/setup-lan.ps1 -UpdateDev`
+	- `docker compose down && docker compose up -d`
+	- `npm run build` and restart PM2 or `npm run start`
+
+## Optional integrations
+
+- Microsoft OAuth: Update Azure redirect URIs to the current origin (`http://<IP>:3000/...`)
+- SMTP & Push: Keep the same env secrets or replace with new ones
+
+## License
+
+Private/internal project. Replace this section if you plan to open source.
