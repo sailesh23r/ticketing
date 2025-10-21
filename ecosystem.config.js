@@ -1,9 +1,12 @@
+/* eslint-disable */
+const path = require("path");
+
 module.exports = {
   apps: [
     {
       name: "ticketing-next",
-      // Run from your actual Next.js project directory
-      cwd: "C:/Users/Jibin/Downloads/ticketing system/new",
+      // Run from the Next.js project directory dynamically (clone-location agnostic)
+      cwd: path.resolve(__dirname).replace(/\\/g, "/"),
       // Use Next.js binary directly (more reliable than wrapping via npm on Windows)
       script: "node_modules/next/dist/bin/next",
       // Bind to all interfaces so it's reachable on LAN
