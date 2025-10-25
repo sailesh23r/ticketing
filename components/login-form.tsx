@@ -45,7 +45,7 @@ export function LoginForm({
   const [totpUri, setTotpUri] = useState<string | undefined>();
   const [backupCodes, setBackupCodes] = useState<string[] | undefined>();
   const [copied, setCopied] = useState(false);
-  const [lastPassword, setLastPassword] = useState<string>("");
+  const [lastPassword] = useState<string>("");
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
   const [otpSetupVerifyLoading, setOtpSetupVerifyLoading] = useState(false);
   const [enable2faLoading, setEnable2faLoading] = useState(false);
@@ -107,17 +107,12 @@ export function LoginForm({
         return;
       }
 
-      // Session exists -> either 2FA not enabled (offer to enable) or enabled but not required.
-  const twoFactorEnabled = Boolean((session.data.user as SessionUser)?.twoFactorEnabled);
+      // Session exists -> proceed to dashboard regardless of 2FA status.
+      // If you want to encourage 2FA, surface it in the dashboard instead.
+      const twoFactorEnabled = Boolean((session.data.user as SessionUser)?.twoFactorEnabled);
       if (!twoFactorEnabled) {
-        if (authMethod === "email" || authMethod === null) {
-          setLastPassword(values.password);
-          setOtpStep("prompt-enable");
-          toast.message("You’re in", { description: "Protect your account by enabling 2FA now (optional)." });
-        } else {
-          // Microsoft login: do not show 2FA enable prompt; proceed
-          window.location.href = "/new-dash";
-        }
+        toast.success("Login successful");
+        window.location.href = "/new-dash";
         return;
       }
 
