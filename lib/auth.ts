@@ -8,40 +8,40 @@ import { getUserDetails } from "./custom-auth-functions";
   
 
 // Detect if the app is expected to run over HTTPS based on env config
-const isHttps = Boolean(
-  process.env.BETTER_AUTH_URL?.startsWith("https://") ||
-    process.env.NEXT_PUBLIC_AUTH_BASE_URL?.startsWith("https://")
-);
+// const isHttps = Boolean(
+//   process.env.BETTER_AUTH_URL?.startsWith("https://") ||
+//     process.env.NEXT_PUBLIC_AUTH_BASE_URL?.startsWith("https://")
+// );
 
 export const auth = betterAuth({
   appName: "Xlter Ticketing System",
   database: prismaAdapter(prisma, {
     provider: "postgresql", // only for auth
   }),
-  // Cookie settings adapt to HTTP (LAN) vs HTTPS (behind NGINX/Reverse proxy)
-  advanced: {
-    defaultCookieAttributes: {
-      secure: isHttps, // true when served via HTTPS
-      sameSite: "lax",
-      path: "/",
-    },
-  },
-  // Allow token/JWKS requests from these origins (CORS + origin validation)
-  trustedOrigins: [
-    // Primary configured origins (support both HTTP and HTTPS via env)
-    process.env.BETTER_AUTH_URL,
-    process.env.NEXT_PUBLIC_AUTH_BASE_URL,
-    // Common local dev hosts
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://localhost:3000",
-    "https://127.0.0.1:3000",
-    // Optional LAN origin derived from LAN_HOST if present
-    process.env.LAN_HOST ? `http://${process.env.LAN_HOST}:3000` : undefined,
-    process.env.LAN_HOST ? `https://${process.env.LAN_HOST}` : undefined,
-    "https://cyberloop.xeltr.com",
+  // // Cookie settings adapt to HTTP (LAN) vs HTTPS (behind NGINX/Reverse proxy)
+  // advanced: {
+  //   defaultCookieAttributes: {
+  //     secure: isHttps, // true when served via HTTPS
+  //     sameSite: "lax",
+  //     path: "/",
+  //   },
+  // },
+  // // Allow token/JWKS requests from these origins (CORS + origin validation)
+  // trustedOrigins: [
+  //   // Primary configured origins (support both HTTP and HTTPS via env)
+  //   process.env.BETTER_AUTH_URL,
+  //   process.env.NEXT_PUBLIC_AUTH_BASE_URL,
+  //   // Common local dev hosts
+  //   "http://localhost:3000",
+  //   "http://127.0.0.1:3000",
+  //   "https://localhost:3000",
+  //   "https://127.0.0.1:3000",
+  //   // Optional LAN origin derived from LAN_HOST if present
+  //   process.env.LAN_HOST ? `http://${process.env.LAN_HOST}:3000` : undefined,
+  //   process.env.LAN_HOST ? `https://${process.env.LAN_HOST}` : undefined,
+  //   "https://cyberloop.xeltr.com",
   
-  ].filter(Boolean) as string[],
+  // ].filter(Boolean) as string[],
   emailAndPassword: {
     enabled: true,
   },
