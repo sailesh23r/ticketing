@@ -73,7 +73,7 @@ export function LoginForm({
         email: values.email,
         password: values.password,
         // Don’t redirect yet; we want to handle 2FA state in-place
-        callbackURL: undefined,
+        callbackURL: "/new-dash",
         rememberMe: false,
       }, {
         // Optional callbacks (uncomment / customize as needed)

@@ -112,6 +112,36 @@ The setup script writes typical values like:
 - Microsoft OAuth: Update Azure redirect URIs to the current origin (`http://<IP>:3000/...`)
 - SMTP & Push: Keep the same env secrets or replace with new ones
 
+## Deploy to Coolify (cyberloop.xeltr.com)
+
+- Domain/DNS
+  - Point cyberloop.xeltr.com to your VPS (A record)
+  - If you host Convex separately, also point convex.cyberloop.xeltr.com to its service
+- App (Next.js) setup
+  - Build: `npm ci && npm run build`
+  - Start: `npm run start` (Coolify sets PORT)
+  - TLS: enable Let’s Encrypt in Coolify for cyberloop.xeltr.com
+- Environment (set in Coolify)
+  - NEXT_PUBLIC_AUTH_BASE_URL=https://cyberloop.xeltr.com
+  - BETTER_AUTH_URL=https://cyberloop.xeltr.com
+  - AUTH_JWT_ISSUER=https://cyberloop.xeltr.com
+  - AUTH_JWKS_URL=https://cyberloop.xeltr.com/api/auth/jwks
+  - AUTH_JWT_AUDIENCE=https://cyberloop.xeltr.com
+  - NEXT_PUBLIC_CONVEX_URL=https://convex.cyberloop.xeltr.com
+  - BETTER_AUTH_SECRET=REPLACE
+  - DATABASE_URL=REPLACE
+  - SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/SMTP_FROM
+  - MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRETVALUE
+- Convex
+  - Expose HTTPS endpoint (subdomain or path). Ensure WebSocket upgrades are allowed.
+  - Health: `https://convex.cyberloop.xeltr.com/version` should return 200
+- Verify after deploy
+  - /login → sign in → redirected to `/new-dash`
+  - /api/auth/session returns your session JSON when logged in
+  - /api/auth/token returns `{ token }`
+  - Cookies are Secure, SameSite=Lax
+  - Convex queries/subscriptions succeed (wss upgrades)
+
 ## License
 
 Private/internal project. Replace this section if you plan to open source.
