@@ -1,61 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
-export async function middleware(req: NextRequest) {
-  const url = req.nextUrl;
-  const pathname = url.pathname;
+// Require authentication on all app pages except login (and exclude api/static via matcher)
+export async function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
 
-  // Skip static, images, and Next internals
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/assets") ||
-    pathname.startsWith("/public")
-  ) {
+  // Public auth pages
+  if (pathname === "/login" || pathname === "/register") {
     return NextResponse.next();
   }
 
-  const isApi = pathname.startsWith("/api/");
-  if (isApi) return NextResponse.next();
-
-  // Token report links remain public for all users
-  if (pathname.startsWith("/reports/token")) {
-    return NextResponse.next();
+  const sessionCookie = getSessionCookie(request);
+  if (!sessionCookie) {
+    const url = new URL("/login", request.url);
+    // Send users back to the page they tried to reach after login
+    const callback = pathname + (search || "");
+    url.searchParams.set("callbackUrl", callback);
+    return NextResponse.redirect(url);
   }
 
-  // Check session via server endpoint to avoid bundling server-only code here
-  try {
-    const res = await fetch(new URL("/api/session", req.url), {
-      headers: { cookie: req.headers.get("cookie") || "" },
-    });
-    if (res.ok) {
-      // Authenticated: normalize to /new-dash for any non-/new-dash routes (including /login)
-      if (!pathname.startsWith("/new-dash")) {
-        const dest = new URL("/new-dash", req.url);
-        return NextResponse.redirect(dest);
-      }
-      return NextResponse.next();
-    }
-  } catch {
-    // fallthrough to redirect
-  }
-
-  // Not authenticated: redirect to login with callbackUrl back to the original
-  const loginUrl = new URL("/login", req.url);
-  // Allow accessing the login page unauthenticated
-  if (pathname === "/login") {
-    return NextResponse.next();
-  }
-  // Temporarily allow registration page without auth
-  if (pathname === "/register") {
-    return NextResponse.next();
-  }
-  // After login, land on /new-dash
-  loginUrl.searchParams.set("callbackUrl", "/new-dash");
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.next();
 }
 
 export const config = {
+  // Intercept most pages, but skip Next internals, static assets, and ALL /api routes
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|assets/|public/|images/|api/).*)",
   ],
 };

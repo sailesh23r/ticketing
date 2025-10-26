@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "./ui/input-otp"
 import QRCode from "react-qr-code"
 import { Label } from "./ui/label"
+import { useRouter } from "next/navigation"
 
 
 const formSchema = z.object({
@@ -51,6 +52,8 @@ export function LoginForm({
   const [enable2faLoading, setEnable2faLoading] = useState(false);
   const [authMethod, setAuthMethod] = useState<"email" | "microsoft" | null>(null);
 
+  const router = useRouter();
+
   const toggleVisibility = () => setIsVisible((prevState) => !prevState)
 
 
@@ -73,7 +76,7 @@ export function LoginForm({
         email: values.email,
         password: values.password,
         // Don’t redirect yet; we want to handle 2FA state in-place
-        callbackURL: undefined,
+        callbackURL: "/new-dash",
         rememberMe: false,
       }, {
         // Optional callbacks (uncomment / customize as needed)
@@ -102,7 +105,8 @@ export function LoginForm({
           toast.message("Two-factor verification", { description: "Enter the 6-digit code from your authenticator app." });
         } else {
           // For Microsoft, do not show OTP UI; navigate
-          window.location.href = "/new-dash";
+          router.push("/new-dash");
+          // window.location.href = "/new-dash";
         }
         return;
       }
@@ -116,14 +120,16 @@ export function LoginForm({
           toast.message("You’re in", { description: "Protect your account by enabling 2FA now." });
         } else {
           // Microsoft login: do not show 2FA enable prompt; proceed
-          window.location.href = "/new-dash";
+          router.push("/new-dash");
+          // window.location.href = "/new-dash";
         }
         return;
       }
 
       // Session exists and 2FA already enabled (no OTP required) -> proceed
       toast.success("Login successful");
-      window.location.href = "/new-dash";
+      router.push("/new-dash");
+      // window.location.href = "/new-dash";
 
     } catch (e: unknown) {
       console.error(e);
@@ -144,7 +150,7 @@ export function LoginForm({
     try {
       const res = await authClient.signIn.social({
         provider: "microsoft",
-        callbackURL: "/new-dash", // The URL to redirect to after the sign in
+        callbackURL: "/new-dash",
       });
       if (res.error) {
         setError(res.error.statusText || "Login failed");
@@ -328,7 +334,7 @@ export function LoginForm({
                         <InputOTPSlot index={1} />
                         <InputOTPSlot index={2} />
                       </InputOTPGroup>
-                        <InputOTPSeparator />
+                      <InputOTPSeparator />
                       <InputOTPGroup>
                         <InputOTPSlot index={3} />
                         <InputOTPSlot index={4} />
@@ -469,7 +475,7 @@ export function LoginForm({
                           }
                         }}
                       >
-                         <InputOTPGroup>
+                        <InputOTPGroup>
                           <InputOTPSlot index={0} />
                           <InputOTPSlot index={1} />
                           <InputOTPSlot index={2} />
@@ -493,7 +499,7 @@ export function LoginForm({
                               setOtpStep("setup-backup");
                             } else {
                               toast.success("Two-factor enabled. Login successful");
-                              window.location.href = "/new-dash";
+                              router.push("/new-dash");
                             }
                           } finally {
                             setOtpSetupVerifyLoading(false);
@@ -537,17 +543,16 @@ export function LoginForm({
                     <Button type="button" className="w-full" onClick={() => { toast.success("Two-factor enabled. Login successful"); window.location.href = "/new-dash"; }}>Done</Button>
                   </div>
                 )}
+                <div className="relative">
 
-                <Button type="submit" className="w-full" disabled={isLoading || otpStep !== "none"}>
-                  {!isLoading ? (
-                    <>
-                      Login
-                      {lastMethod === "email" && (
-                        <Badge variant="outline" className="text-accent gap-1 outline-0 border-0"><CheckIcon className="text-emerald-500" size={12} aria-hidden="true" /> Last used</Badge>
-                      )}
-                    </>
-                  ) : "Logging in..."}
-                </Button>
+                  <Button type="submit" className="w-full" disabled={isLoading || otpStep !== "none"}>
+                    {!isLoading ? "Login" : "Logging in..."}
+                  </Button>
+
+                  {lastMethod === "email" && (
+                    <Badge variant="default" className="text-xs absolute z-40 top-1/2 -translate-y-1/2"><CheckIcon className="text-emerald-500" size={12} aria-hidden="true" /> Last used</Badge>
+                  )}
+                </div>
                 {otpStep === "none" && (
                   <>
                     <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
@@ -556,17 +561,22 @@ export function LoginForm({
                       </span>
                     </div>
                     <div className="grid grid-cols-1 gap-4">
-                      <Button variant="outline" type="button" className="w-full h-[41px]" onClick={signInMicrosoft} disabled={isLoading || isLoadingMicrosoft} >
-                        {!isLoadingMicrosoft ? (
-                          <>
-                            <Image src="/ms-symbollockup_mssymbol_19.svg" alt="Microsoft Logo" width={20} height={20} className="mr-1" />
-                            Sign in with Microsoft
-                            {lastMethod === "microsoft" && (
-                              <Badge className="ml-2">Last used</Badge>
-                            )}
-                          </>
-                        ) : "Logging in..."}
-                      </Button>
+                      <div className="relative">
+                        <Button variant="outline" type="button" className="w-full h-[41px]" onClick={signInMicrosoft} disabled={isLoading || isLoadingMicrosoft} >
+                          {!isLoadingMicrosoft ? (
+                            <>
+                              <Image src="/ms-symbollockup_mssymbol_19.svg" alt="Microsoft Logo" width={20} height={20} className="mr-1" />
+                              Sign in with Microsoft
+
+                            </>
+                          ) : "Logging in..."}
+                        </Button>
+                        {lastMethod === "microsoft" && (
+                          <Badge variant="default" className="text-xs absolute z-40 top-1/2 -translate-y-1/2"><CheckIcon className="text-emerald-500" size={12} aria-hidden="true" /> Last used</Badge>
+                        )}
+
+                      </div>
+
                     </div>
                   </>
                 )}
