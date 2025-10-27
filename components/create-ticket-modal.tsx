@@ -75,13 +75,40 @@ export function CreateTicketModal({ compact = false }: { compact?: boolean }) {
     const storageIds: string[] = [];
     for (const file of files) {
       try {
+        // Primary: upload via Convex pre-signed storage URL (fast path)
         const url = await getUploadUrl({});
-        const res = await fetch(url, { method: "POST", body: file });
-        if (!res.ok) continue;
-        const json = (await res.json()) as { storageId: string };
-        storageIds.push(json.storageId);
+        try {
+          const res = await fetch(url, { method: "POST", body: file });
+          if (res.ok) {
+            const json = (await res.json()) as { storageId: string };
+            storageIds.push(json.storageId);
+            continue;
+          }
+        } catch {
+          // likely CORS/preflight blocked or network error; fall back below
+        }
+
+        // Fallback: use Convex HTTP route with CORS headers set server-side
+        const resolveConvexUrl = () => {
+          const envUrl = process.env.NEXT_PUBLIC_CONVEX_URL as string | undefined;
+          if (envUrl && !/^(?:http:\/\/)?(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(envUrl)) {
+            return envUrl;
+          }
+          if (typeof window !== "undefined") {
+            const proto = window.location.protocol === "https:" ? "https" : "http";
+            const host = window.location.hostname;
+            const port = (process.env.NEXT_PUBLIC_CONVEX_PORT as string) || "3210";
+            return `${proto}://${host}:${port}`;
+          }
+          return envUrl || "http://127.0.0.1:3210";
+        };
+        const httpUrl = `${resolveConvexUrl()}/sendImage`;
+        const httpRes = await fetch(httpUrl, { method: "POST", body: file });
+        if (!httpRes.ok) continue;
+        const json2 = (await httpRes.json()) as { storageId: string };
+        storageIds.push(json2.storageId);
       } catch {
-        // ignore individual file errors
+        // ignore individual file errors completely
       }
     }
     return storageIds;

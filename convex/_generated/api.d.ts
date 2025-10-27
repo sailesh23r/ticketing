@@ -13,6 +13,7 @@ import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
 import type * as emailActions from "../emailActions.js";
 import type * as embeddings from "../embeddings.js";
+import type * as http from "../http.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as notifications from "../notifications.js";
 import type * as projects from "../projects.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   emailActions: typeof emailActions;
   embeddings: typeof embeddings;
+  http: typeof http;
   myFunctions: typeof myFunctions;
   notifications: typeof notifications;
   projects: typeof projects;

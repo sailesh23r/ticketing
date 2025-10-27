@@ -50,6 +50,60 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
     setFiles(Array.from(e.target.files ?? []));
   };
 
+  async function uploadFilesAndGetAttachments(): Promise<{ storageId: string; fileName: string; fileSize?: number; contentType?: string }[]> {
+    const results: { storageId: string; fileName: string; fileSize?: number; contentType?: string }[] = [];
+    const resolveConvexUrl = () => {
+      const envUrl = process.env.NEXT_PUBLIC_CONVEX_URL as string | undefined;
+      if (envUrl && !/^(?:http:\/\/)?(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(envUrl)) {
+        return envUrl;
+      }
+      if (typeof window !== "undefined") {
+        const proto = window.location.protocol === "https:" ? "https" : "http";
+        const host = window.location.hostname;
+        const port = (process.env.NEXT_PUBLIC_CONVEX_PORT as string) || "3210";
+        return `${proto}://${host}:${port}`;
+      }
+      return envUrl || "http://127.0.0.1:3210";
+    };
+
+    for (const file of files) {
+      // Try fast path: Convex pre-signed upload URL
+      let stored: string | null = null;
+      try {
+        const url = await getUploadUrl({});
+        try {
+          const res = await fetch(url, { method: "POST", body: file });
+          if (res.ok) {
+            const json = (await res.json()) as { storageId: string };
+            stored = json.storageId;
+          }
+        } catch {
+          // fall through to HTTP route
+        }
+      } catch {
+        // fall through
+      }
+
+      if (!stored) {
+        try {
+          const httpUrl = `${resolveConvexUrl()}/sendImage`;
+          const httpRes = await fetch(httpUrl, { method: "POST", body: file });
+          if (httpRes.ok) {
+            const json2 = (await httpRes.json()) as { storageId: string };
+            stored = json2.storageId;
+          }
+        } catch {
+          // ignore, we'll skip this file
+        }
+      }
+
+      if (stored) {
+        results.push({ storageId: stored, fileName: file.name, fileSize: file.size, contentType: file.type });
+      }
+    }
+    return results;
+  }
+
   const applyWrap = (prefix: string, suffix: string = prefix) => {
     const el = textareaRef.current;
     if (!el) return;
@@ -342,24 +396,9 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
       if (files.length) {
         setUploading(true);
         setUploadProgress({ done: 0, total: files.length });
-        for (const file of files) {
-          try {
-            const uploadInfo = await getUploadUrl({}) as unknown;
-            let uploadUrl: string | undefined;
-            if (typeof uploadInfo === 'string') uploadUrl = uploadInfo;
-            else if (uploadInfo && typeof uploadInfo === 'object' && 'url' in uploadInfo && typeof (uploadInfo as { url?: unknown }).url === 'string') {
-              uploadUrl = (uploadInfo as { url: string }).url;
-            }
-            if (!uploadUrl) continue;
-            const res = await fetch(uploadUrl, { method: 'POST', body: file });
-            if (!res.ok) continue;
-            const json = await res.json() as { storageId?: string };
-            if (json?.storageId) {
-              allAttachments.push({ storageId: json.storageId, fileName: file.name, fileSize: file.size, contentType: file.type });
-            }
-          } catch {/* ignore per-file */}
-          setUploadProgress(p => ({ done: p.done + 1, total: p.total }));
-        }
+        const uploaded = await uploadFilesAndGetAttachments();
+        allAttachments.push(...uploaded);
+        setUploadProgress({ done: files.length, total: files.length });
         setUploading(false);
       }
       if (attachments.length) allAttachments.push(...attachments);
