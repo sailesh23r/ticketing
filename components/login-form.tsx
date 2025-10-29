@@ -75,8 +75,7 @@ export function LoginForm({
       const { error } = await authClient.signIn.email({
         email: values.email,
         password: values.password,
-        // Don’t redirect yet; we want to handle 2FA state in-place
-        callbackURL: "/new-dash",
+        // Do not provide a callbackURL here; we gate email logins behind 2FA explicitly
         rememberMe: false,
       }, {
         // Optional callbacks (uncomment / customize as needed)
@@ -117,7 +116,7 @@ export function LoginForm({
         if (authMethod === "email" || authMethod === null) {
           setLastPassword(values.password);
           setOtpStep("prompt-enable");
-          toast.message("You’re in", { description: "Protect your account by enabling 2FA now." });
+          toast.message("Two-factor required", { description: "Enable 2FA to continue." });
         } else {
           // Microsoft login: do not show 2FA enable prompt; proceed
           router.push("/new-dash");
@@ -306,13 +305,14 @@ export function LoginForm({
                 />
 
                 {otpStep === "verify" && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 w-full">
                     <div className="text-sm">
                       Enter the 6-digit code from your authenticator app
                     </div>
                     <InputOTP
                       maxLength={6}
                       value={otp}
+                      autoFocus
                       className="w-full"
                       onChange={async (value) => {
                         setOtp(value);
@@ -325,21 +325,25 @@ export function LoginForm({
                               return;
                             }
                             toast.success("Login successful");
-                            window.location.href = "/new-dash";
+                            router.push("/new-dash");
+                            // window.location.href = "/new-dash";
                           } finally {
                             setOtpVerifyLoading(false);
                           }
                         }
                       }}
                     >
-                      <InputOTPGroup>
+                      <InputOTPGroup className="w-full">
                         <InputOTPSlot index={0} />
                         <InputOTPSlot index={1} />
-                        <InputOTPSlot index={2} />
                       </InputOTPGroup>
                       <InputOTPSeparator />
-                      <InputOTPGroup>
+                      <InputOTPGroup className="w-full">
+                        <InputOTPSlot index={2} />
                         <InputOTPSlot index={3} />
+                      </InputOTPGroup>
+                      <InputOTPSeparator />
+                      <InputOTPGroup className="w-full">
                         <InputOTPSlot index={4} />
                         <InputOTPSlot index={5} />
                       </InputOTPGroup>
@@ -354,7 +358,8 @@ export function LoginForm({
                             const { error } = await authClient.twoFactor.verifyTotp({ code: otp });
                             if (error) return toast.error(error.message || "Invalid code");
                             toast.success("Login successful");
-                            window.location.href = "/new-dash";
+                            router.push("/new-dash");
+                            // window.location.href = "/new-dash";
                           } finally {
                             setOtpVerifyLoading(false);
                           }
@@ -377,7 +382,7 @@ export function LoginForm({
                 {otpStep === "prompt-enable" && (
                   <div className="space-y-3">
                     <div className="text-sm">
-                      You’re logged in. For extra security, enable two-factor authentication.
+                      Two-factor authentication is required for email sign-ins. Enable 2FA to continue.
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -414,14 +419,6 @@ export function LoginForm({
                           "Enable 2FA now"
                         )}
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => { window.location.href = "/new-dash"; }}
-                        className="w-full"
-                      >
-                        Skip for now
-                      </Button>
                     </div>
                   </div>
                 )}
@@ -454,8 +451,10 @@ export function LoginForm({
                         </InputOTPGroup>
                       </InputOTP> */}
                       <InputOTP
+                      className="w-full"
                         maxLength={6}
                         value={otp}
+                        autoFocus
                         onChange={async (value) => {
                           setOtp(value);
                           if (value.length === 6 && !otpSetupVerifyLoading) {
@@ -470,7 +469,8 @@ export function LoginForm({
                                 setOtpStep("setup-backup");
                               } else {
                                 toast.success("Two-factor enabled. Login successful");
-                                window.location.href = "/new-dash";
+                                router.push("/new-dash");
+                                // window.location.href = "/new-dash";
                               }
                             } finally {
                               setOtpSetupVerifyLoading(false);
@@ -478,14 +478,17 @@ export function LoginForm({
                           }
                         }}
                       >
-                        <InputOTPGroup>
+                        <InputOTPGroup className="w-full">
                           <InputOTPSlot index={0} />
                           <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
                         </InputOTPGroup>
                         <InputOTPSeparator />
-                        <InputOTPGroup>
+                        <InputOTPGroup className="w-full">
+                          <InputOTPSlot index={2} />
                           <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup className="w-full">
                           <InputOTPSlot index={4} />
                           <InputOTPSlot index={5} />
                         </InputOTPGroup>
@@ -543,7 +546,8 @@ export function LoginForm({
                         {copied ? <CheckIcon className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                       </Button>
                     </div>
-                    <Button type="button" className="w-full" onClick={() => { toast.success("Two-factor enabled. Login successful"); window.location.href = "/new-dash"; }}>Done</Button>
+                    <Button type="button" className="w-full" onClick={() => { toast.success("Two-factor enabled. Login successful"); 
+                      router.push("/new-dash"); }}>Done</Button>
                   </div>
                 )}
                 <div className="relative">

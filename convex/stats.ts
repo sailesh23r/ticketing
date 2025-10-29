@@ -51,7 +51,7 @@ export const ticketStats = query({
     const projectSet = buildProjectSet(me as ScopeUser | null, isAdmin);
 
     const totals = {
-      total: tickets.length,
+      total: 0,
       open: 0,
       in_progress: 0,
       resolved: 0,
@@ -67,6 +67,7 @@ export const ticketStats = query({
 
     for (const t of tickets) {
       if (!canSeeTicket(t as ScopeTicket, authId, isAdmin, projectSet)) continue;
+      totals.total++;
       switch (t.status) {
         case "open": totals.open++; break;
         case "in_progress": totals.in_progress++; break;
@@ -95,6 +96,45 @@ export const ticketStats = query({
         closedByMe,
       },
     } as const;
+  },
+});
+
+// Priority distribution scoped to viewer visibility
+export const priorityDistribution = query({
+  args: { project: v.optional(v.string()), team: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const authId = identity?.subject ?? null;
+
+    // Determine admin and project membership for scoping
+    let me: { roles?: string[]; projects?: string[] } | null = null;
+    if (authId) {
+      me = await ctx.db
+        .query("users")
+        .withIndex("by_authUserId", (q) => q.eq("authUserId", authId))
+        .first();
+    }
+    const roles = (me?.roles ?? []).map((r) => r.toLowerCase());
+    const isAdmin = roles.includes("admin");
+
+    let qb = ctx.db.query("tickets");
+    if (args.project) qb = qb.filter((f) => f.eq(f.field("project"), args.project!));
+    if (args.team && args.team !== "all") qb = qb.filter((f) => f.eq(f.field("assignedToGroup"), args.team!));
+    const tickets = await qb.take(3000);
+
+    const projectSet = buildProjectSet(me as ScopeUser | null, isAdmin);
+
+    const counts: Record<"P0" | "P1" | "P2" | "P3", number> = { P0: 0, P1: 0, P2: 0, P3: 0 };
+    let total = 0;
+    for (const t of tickets as Array<Record<string, unknown>>) {
+      if (!canSeeTicket(t as ScopeTicket, authId, isAdmin, projectSet)) continue;
+      const p = t.priority as "P0" | "P1" | "P2" | "P3" | undefined;
+      if (!p || !(p in counts)) continue;
+      counts[p] += 1;
+      total += 1;
+    }
+
+    return { isAdmin, total, counts } as const;
   },
 });
 

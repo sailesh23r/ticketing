@@ -36,7 +36,7 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
     | undefined;
   const userExtras = useQuery(api.stats.userDashboardExtras, { project: projectFilter }) as { avgTurnaroundMs: number; sample: number } | null | undefined;
   const projects = useQuery(api.stats.listProjects, {}) as Array<{ slug: string; name: string }> | undefined;
-  const ticketsForPriority = useQuery(api.myFunctions.listTicketsByProject, projectFilter ? { project: projectFilter } : "skip") as Array<{ priority: PriorityKey; status: string }> | undefined;
+  const priority = useQuery(api.stats.priorityDistribution, { project: projectFilter, team: props.team }) as { isAdmin: boolean; total: number; counts: Record<PriorityKey, number> } | undefined;
   const avgResp = useQuery(api.stats.avgResponseTime, { project: projectFilter }) as { averageMs: number; sample: number } | undefined;
 
   const loading = !stats;
@@ -47,11 +47,11 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
 
   const priorityDist = useMemo(() => {
     const base: Record<PriorityKey, number> = { P0: 0, P1: 0, P2: 0, P3: 0 };
-    if (!ticketsForPriority) return { total: 0, dist: base };
-    for (const t of ticketsForPriority) base[t.priority]++;
-    const total = ticketsForPriority.length || 1;
-    return { total, dist: base };
-  }, [ticketsForPriority]);
+    if (!priority) return { total: 0, dist: base };
+    const dist = { ...base, ...priority.counts } as Record<PriorityKey, number>;
+    const total = priority.total || 0;
+    return { total, dist };
+  }, [priority]);
   const pct = (n: number) => Math.round((n / (priorityDist.total || 1)) * 100);
 
   function formatDuration(ms: number): string {

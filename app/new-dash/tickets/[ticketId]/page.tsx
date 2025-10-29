@@ -108,6 +108,7 @@ export default function TicketThreadPage() {
   // Sonner toast is used for notifications
   const allUsers = useQuery(api.users.listAll) as Array<{ authUserId?: string; name?: string; email: string; projects?: string[]; _id?: string }> | undefined;
   const teamsList = useQuery(api.teams.listAll, {});
+  const allProjectsRows = useQuery(api.projects.listProjects, {});
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   // Resolve display names for authors/actors in messages/events
   const msgIds = (thread?.messages ?? []).map((m) => m.authorId).filter(Boolean) as string[];
@@ -143,8 +144,10 @@ export default function TicketThreadPage() {
 
   // Build project members list from all users if ticket.project is present
   const projectMembers = useMemo(() => {
-    const proj = thread?.ticket?.project ?? thread?.ticket?.project;
     if (!allUsers) return [] as Array<{ authUserId?: string; name?: string; email?: string; _id?: string }>;
+    // Admins can assign to anyone
+    if (isAdmin) return allUsers;
+    const proj = thread?.ticket?.project ?? thread?.ticket?.project;
     const members = proj ? allUsers.filter((u) => Array.isArray(u.projects) && (u.projects as string[]).includes(proj)) : [];
     // Ensure current assignee is present in the options so the select can show it
     const assigneeId = thread?.ticket?.assignedToUser;
@@ -154,7 +157,12 @@ export default function TicketThreadPage() {
       else members.unshift({ authUserId: assigneeId, name: assigneeId, email: "" });
     }
     return members;
-  }, [allUsers, thread]);
+  }, [allUsers, thread, isAdmin]);
+
+  const adminProjectNames = useMemo(() => {
+    if (!Array.isArray(allProjectsRows)) return [] as string[];
+    return (allProjectsRows as Array<{ name?: string; slug?: string }>).map(r => r.name || r.slug).filter(Boolean) as string[];
+  }, [allProjectsRows]);
 
   // Similar tickets state and effect must be declared before any early returns
   const [similar, setSimilar] = useState<Array<{ _id: string; ticketId: string; title: string; status: string; project?: string; _score: number }>>([]);
@@ -367,7 +375,7 @@ export default function TicketThreadPage() {
                 <ProjectControl
                   current={t.project}
                   canEdit={isAdmin || t.assignedToUser === userId}
-                  projects={(me?.projects ?? []) as string[]}
+                  projects={isAdmin ? adminProjectNames : ((me?.projects ?? []) as string[])}
                   onChange={async (val) => {
                     try {
                       await changeProject({ ticketId: t.ticketId, project: val });
