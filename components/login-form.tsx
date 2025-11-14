@@ -426,7 +426,7 @@ export function LoginForm({
                 {otpStep === "setup-qr" && (
                   <div className="space-y-4">
                     <div className="text-sm">Scan this QR code with your authenticator app</div>
-                    <div className="flex justify-center p-4 bg-white rounded-lg border">
+                    <div className="flex justify-center p-4 bg-card rounded-lg border border-border">
                       {twoSetupLoading ? (
                         <Loader2 className="h-6 w-6 animate-spin" />
                       ) : totpUri ? (

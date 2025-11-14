@@ -351,7 +351,7 @@ export function TicketReports({ exportOnly = false }: { exportOnly?: boolean }) 
                   <span className="font-medium">Share link:</span>
                   <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(shareState.url!)}>Copy</Button>
                 </div>
-                <a href={shareState.url} target="_blank" rel="noopener" className="break-all text-blue-600 hover:underline">
+                <a href={shareState.url} target="_blank" rel="noopener" className="break-all text-primary hover:underline">
                   {shareState.url}
                 </a>
                 {shareState.expiresAt && (

@@ -150,6 +150,13 @@ export default defineSchema({
     description: v.optional(v.string()),
     // Optional membership list of auth user ids
     members: v.optional(v.array(v.string())),
+    // Optional suspended flag - suspended projects are read-only for ticket creation/assignment
+    suspended: v.optional(v.boolean()),
+    // Optional SLA targets in hours per priority for this project
+    slaP0Hours: v.optional(v.number()),
+    slaP1Hours: v.optional(v.number()),
+    slaP2Hours: v.optional(v.number()),
+    slaP3Hours: v.optional(v.number()),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
   }).index("by_slug", ["slug"]).index("by_name", ["name"]),

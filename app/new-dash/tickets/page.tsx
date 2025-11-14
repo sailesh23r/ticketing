@@ -299,16 +299,16 @@ export default function TicketsDashboardList() {
                 };
                 return (
                   <tr key={t._id}>
-                    <td className="px-3 py-2 font-mono text-xs border border-gray-100 whitespace-nowrap">
+                    <td className="px-3 py-2 font-mono text-xs border border-border whitespace-nowrap">
                       <Link href={`/new-dash/tickets/${t.ticketId}`} className="underline-offset-2 hover:underline focus:outline-none focus:ring-1 focus:ring-ring rounded-sm flex items-center gap-1">
                       {t.ticketId} <ExternalLink className="size-3" />
                       </Link>
                       </td>
-                    <td className="px-3 py-2 max-w-[280px] truncate border border-gray-100" title={t.title}>{t.title}</td>
-                    <td className="px-3 py-2 border border-gray-100">
+                    <td className="px-3 py-2 max-w-[280px] truncate border border-border" title={t.title}>{t.title}</td>
+                    <td className="px-3 py-2 border border-border">
                       {t.priority && (() => {
                         const priorityDotColorMap: Record<string, string> = { P0: 'bg-red-500', P1: 'bg-orange-500', P2: 'bg-amber-400', P3: 'bg-emerald-500' };
-                        const colorClasses = priorityColorMap[t.priority] || 'bg-gray-200 text-gray-700';
+                        const colorClasses = priorityColorMap[t.priority] || 'bg-muted text-foreground';
                         return (
                           <Badge
                             variant="outline"
@@ -320,7 +320,7 @@ export default function TicketsDashboardList() {
                         );
                       })()}
                     </td>
-                    <td className="px-3 py-2 border border-gray-100">
+                    <td className="px-3 py-2 border border-border">
                       {t.status && (() => {
                         const statusDotColorMap: Record<string, string> = {
                           open: 'bg-red-500',
@@ -329,7 +329,7 @@ export default function TicketsDashboardList() {
                           resolved: 'bg-green-500',
                           closed: 'bg-gray-500'
                         };
-                        const colorClasses = statusColorMap[t.status] || 'bg-gray-200 text-gray-700';
+                        const colorClasses = statusColorMap[t.status] || 'bg-muted text-foreground';
                         return (
                           <Badge
                             variant="outline"
@@ -341,10 +341,10 @@ export default function TicketsDashboardList() {
                         );
                       })()}
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground border border-gray-100">{t.assignedToGroup || '—'}</td>
-                    <td className="px-3 py-2 text-xs border border-gray-100">{assignee}</td>
-                    <td className="px-3 py-2 text-xs whitespace-nowrap border border-gray-100">{created ? new Date(created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}</td>
-                    <td className="px-3 py-2 text-xs border border-gray-100 ">
+                    <td className="px-3 py-2 text-xs text-muted-foreground border border-border">{t.assignedToGroup || '—'}</td>
+                    <td className="px-3 py-2 text-xs border border-border">{assignee}</td>
+                    <td className="px-3 py-2 text-xs whitespace-nowrap border border-border">{created ? new Date(created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}</td>
+                    <td className="px-3 py-2 text-xs border border-border ">
                       {slaH ? (
                         <span className={overdue ? 'text-red-600 font-medium' : ''}>{elapsedH}h / {slaH}h {overdue && '• Overdue'}</span>
                       ) : '—'}
@@ -354,7 +354,7 @@ export default function TicketsDashboardList() {
               })}
               {tickets.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-sm text-muted-foreground border border-gray-100">No tickets found.</td>
+                  <td colSpan={8} className="text-center py-8 text-sm text-muted-foreground border border-border">No tickets found.</td>
                 </tr>
               )}
             </tbody>

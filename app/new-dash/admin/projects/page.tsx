@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import MultipleSelector, { Option as MSOption } from "@/components/ui/multiselect";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, Pen, Trash } from "lucide-react";
@@ -21,11 +22,11 @@ export default function AdminProjectsPage() {
   const userId = session?.user?.id as string | undefined;
 
   const projects = useQuery(api.projects.listProjects) as
-    | { _id: string; slug: string; name: string; description?: string; members?: string[] }[]
+    | { _id: string; slug: string; name: string; description?: string; members?: string[]; suspended?: boolean; slaP0Hours?: number; slaP1Hours?: number; slaP2Hours?: number; slaP3Hours?: number }[]
     | undefined;
 
   // Fetch all users to derive dynamic membership counts (users who have the project in their projects array)
-  const users = useQuery(api.users.listAll, {}) as | { projects?: string[] }[] | undefined;
+  const users = useQuery(api.users.listAll, {}) as | { authUserId: string; email: string; name?: string; projects?: string[] }[] | undefined;
 
   const projectUserCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -35,6 +36,13 @@ export default function AdminProjectsPage() {
       }
     }
     return map;
+  }, [users]);
+
+  const userOptions = useMemo<MSOption[]>(() => {
+    return (users ?? []).map(u => ({
+      value: u.authUserId,
+      label: `${u.name || u.email || u.authUserId} · ${u.authUserId}`,
+    }));
   }, [users]);
 
   const me = useQuery(api.users.getByAuthId, { authUserId: userId ?? "" });
@@ -47,10 +55,11 @@ export default function AdminProjectsPage() {
   const createProject = useMutation(api.projects.createProject);
   const updateProject = useMutation(api.projects.updateProject);
   const deleteProject = useMutation(api.projects.deleteProject);
+  const setProjectMembers = useMutation(api.projects.setProjectMembers);
 
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   // Keep slug only for identifying an existing project on edit; on create we compute from name.
-  const [form, setForm] = useState<{ slug: string; name: string; description?: string; members?: string } | null>(null);
+  const [form, setForm] = useState<{ slug: string; name: string; description?: string; members: string[]; slaP0?: string; slaP1?: string; slaP2?: string; slaP3?: string } | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   // Using Sonner toasts for feedback
@@ -62,14 +71,23 @@ export default function AdminProjectsPage() {
 
   function startCreate() {
     setEditingSlug(null);
-    setForm({ slug: "", name: "", description: "", members: "" });
+  setForm({ slug: "", name: "", description: "", members: [], slaP0: "", slaP1: "", slaP2: "", slaP3: "" });
     setFormOpen(true);
     setFormError(null);
   }
 
-  function startEdit(p: { slug: string; name: string; description?: string; members?: string[] }) {
+  function startEdit(p: { slug: string; name: string; description?: string; members?: string[]; slaP0Hours?: number; slaP1Hours?: number; slaP2Hours?: number; slaP3Hours?: number }) {
     setEditingSlug(p.slug);
-    setForm({ slug: p.slug, name: p.name, description: p.description ?? "", members: (p.members ?? []).join(", ") });
+    setForm({
+      slug: p.slug,
+      name: p.name,
+      description: p.description ?? "",
+      members: p.members ?? [],
+      slaP0: (p.slaP0Hours ?? "").toString(),
+      slaP1: (p.slaP1Hours ?? "").toString(),
+      slaP2: (p.slaP2Hours ?? "").toString(),
+      slaP3: (p.slaP3Hours ?? "").toString(),
+    });
     setFormOpen(true);
     setFormError(null);
   }
@@ -77,13 +95,42 @@ export default function AdminProjectsPage() {
   async function save() {
     if (!form) return;
     try {
-      const members = form.members ? form.members.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const members = form.members;
+      const toNum = (v?: string) => {
+        if (v === undefined) return undefined;
+        const trimmed = v.trim();
+        if (!trimmed) return undefined;
+        const n = Number(trimmed);
+        return Number.isFinite(n) && n >= 0 ? n : undefined;
+      };
       if (editingSlug === null) {
         const computedSlug = slugify(form.name);
-        await createProject({ slug: computedSlug, name: form.name, description: form.description, members });
+        await createProject({
+          slug: computedSlug,
+          name: form.name,
+          description: form.description,
+          members,
+          slaP0Hours: toNum(form.slaP0),
+          slaP1Hours: toNum(form.slaP1),
+          slaP2Hours: toNum(form.slaP2),
+          slaP3Hours: toNum(form.slaP3),
+        });
+        if (members.length > 0) {
+          await setProjectMembers({ slug: computedSlug, members });
+        }
         toast.success("Project created");
       } else {
-        await updateProject({ slug: form.slug, name: form.name, description: form.description, members });
+        await updateProject({
+          slug: form.slug,
+          name: form.name,
+          description: form.description,
+          members,
+          slaP0Hours: toNum(form.slaP0),
+          slaP1Hours: toNum(form.slaP1),
+          slaP2Hours: toNum(form.slaP2),
+          slaP3Hours: toNum(form.slaP3),
+        });
+        await setProjectMembers({ slug: form.slug, members });
         toast.success("Project updated");
       }
       setForm(null);
@@ -151,6 +198,7 @@ export default function AdminProjectsPage() {
                     <th className="sticky top-0 z-10 text-left px-3 py-2 font-medium w-[220px]">Name</th>
                     <th className="sticky top-0 z-10 text-left px-3 py-2 font-medium w-[160px]">Slug</th>
                     <th className="sticky top-0 z-10 text-left px-3 py-2 font-medium">Description</th>
+                    <th className="sticky top-0 z-10 text-left px-3 py-2 font-medium w-[220px]">SLA (hours P0–P3)</th>
                     <th className="sticky top-0 z-10 text-left px-3 py-2 font-medium w-[120px]">Users</th>
                     <th className="sticky top-0 z-10 text-left px-3 py-2 font-medium w-[150px]">Actions</th>
                   </tr>
@@ -162,14 +210,25 @@ export default function AdminProjectsPage() {
                     const showBoth = explicitMembers > 0 && explicitMembers !== dynamicUsers;
                     return (
                       <tr key={proj._id} className="hover:bg-muted/40">
-                        <td className="px-3 py-2 border border-gray-100 whitespace-nowrap" title={proj.name}>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-[11px] leading-tight truncate max-w-[200px]" title={proj.name}>{proj.name}</span>
+                        <td className="px-3 py-2 border border-border whitespace-nowrap" title={proj.name}>
+                          <div className="flex items-center gap-2 max-w-[240px]">
+                            <span className="font-medium text-[11px] leading-tight truncate" title={proj.name}>{proj.name}</span>
+                            {proj.suspended && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 uppercase tracking-wide">Suspended</span>
+                            )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 border border-gray-100 font-mono text-[11px]">{proj.slug}</td>
-                        <td className="px-3 py-2 border border-gray-100 max-w-[420px] truncate text-muted-foreground">{proj.description || '—'}</td>
-                        <td className="px-3 py-2 border border-gray-100">
+                        <td className="px-3 py-2 border border-border font-mono text-[11px]">{proj.slug}</td>
+                        <td className="px-3 py-2 border border-border max-w-[420px] truncate text-muted-foreground">{proj.description || '—'}</td>
+                        <td className="px-3 py-2 border border-border">
+                          <div className="flex flex-wrap gap-1 text-[10px] text-muted-foreground">
+                            <span title="P0" className="px-1.5 py-0.5 rounded bg-muted">P0: {typeof proj.slaP0Hours === 'number' ? proj.slaP0Hours : '—'}</span>
+                            <span title="P1" className="px-1.5 py-0.5 rounded bg-muted">P1: {typeof proj.slaP1Hours === 'number' ? proj.slaP1Hours : '—'}</span>
+                            <span title="P2" className="px-1.5 py-0.5 rounded bg-muted">P2: {typeof proj.slaP2Hours === 'number' ? proj.slaP2Hours : '—'}</span>
+                            <span title="P3" className="px-1.5 py-0.5 rounded bg-muted">P3: {typeof proj.slaP3Hours === 'number' ? proj.slaP3Hours : '—'}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 border border-border">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">
                               {dynamicUsers} user{dynamicUsers === 1 ? '' : 's'}
@@ -181,7 +240,7 @@ export default function AdminProjectsPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 border border-gray-100">
+                        <td className="px-3 py-2 border border-border">
                           <div className="flex items-center gap-2">
                             <Button size="icon" variant="outline" className="h-7 text-[11px]" asChild>
                               <Link href={`/new-dash/admin/projects/${proj.slug}`}>
@@ -201,7 +260,7 @@ export default function AdminProjectsPage() {
                   })}
                   {filteredProjects.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-xs text-muted-foreground border border-gray-100">No projects found.</td>
+                      <td colSpan={6} className="text-center py-8 text-xs text-muted-foreground border border-border">No projects found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -226,8 +285,31 @@ export default function AdminProjectsPage() {
                     <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
                   </div>
                   <div>
-                    <Label className="text-xs">Members (comma separated auth user ids)</Label>
-                    <Input value={form.members} onChange={(e) => setForm({ ...form, members: e.target.value })} />
+                    <Label className="text-xs">Members</Label>
+                    <MultipleSelector
+                      options={userOptions}
+                      value={userOptions.filter(o => form.members.includes(o.value))}
+                      onChange={(opts) => setForm({ ...form!, members: opts.map(o => o.value) })}
+                      placeholder="Select members"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">SLA P0 (hours)</Label>
+                      <Input value={form.slaP0 ?? ""} onChange={(e) => setForm({ ...form, slaP0: e.target.value })} placeholder="0" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">SLA P1 (hours)</Label>
+                      <Input value={form.slaP1 ?? ""} onChange={(e) => setForm({ ...form, slaP1: e.target.value })} placeholder="1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">SLA P2 (hours)</Label>
+                      <Input value={form.slaP2 ?? ""} onChange={(e) => setForm({ ...form, slaP2: e.target.value })} placeholder="2" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">SLA P3 (hours)</Label>
+                      <Input value={form.slaP3 ?? ""} onChange={(e) => setForm({ ...form, slaP3: e.target.value })} placeholder="4" />
+                    </div>
                   </div>
                 </div>
               )}

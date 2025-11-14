@@ -464,18 +464,18 @@ export default function TicketThreadPage() {
             </div>
           </div>
 
-        <div className="p-6  border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+        <div className="p-6  border-border">
+          <h3 className="text-lg font-semibold text-foreground mb-3">Description</h3>
           <div className="prose prose-sm max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap">{t.description}</p>
+            <p className="text-foreground whitespace-pre-wrap">{t.description}</p>
           </div>
 
           {t.tags && t.tags.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Tags</h4>
+              <h4 className="text-sm font-medium text-foreground mb-2">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {t.tags.map((tag: string, index: number) => (
-                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">{tag}</span>
+                  <span key={index} className="px-2 py-1 bg-muted text-foreground text-xs rounded">{tag}</span>
                 ))}
               </div>
             </div>
@@ -483,7 +483,7 @@ export default function TicketThreadPage() {
 
           {t.attachments && t.attachments.length > 0 && (
             <div className="mt-4 pt-2 border-t">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Attachments</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-3">Attachments</h3>
               <div className="flex flex-wrap gap-3">
                 {t.attachments.map((url: string, idx: number) => (
                   <Attachment key={idx} url={url} idx={idx} onOpen={(u) => setPreviewUrl(u)} />

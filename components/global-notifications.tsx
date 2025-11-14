@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { subscribeUser } from "@/lib/subscribeUser";
+import Link from "next/link";
 
 interface NotificationRow {
   _id: Id<"notifications">;
@@ -169,7 +170,16 @@ export default function GlobalNotifications() {
                 </div>
                 <div className="text-muted-foreground leading-snug line-clamp-3">{n.body}</div>
                 {n.meta?.ticketId && (
-                  <div className="text-[10px] text-muted-foreground/80">Ticket: {n.meta.ticketId}</div>
+                  <div className="text-[10px] text-muted-foreground/80">
+                    Ticket: {" "}
+                    <Link
+                      href={`/new-dash/tickets/${n.meta.ticketId}`}
+                      className="underline hover:text-foreground"
+                      onClick={() => setOpen(false)}
+                    >
+                      {n.meta.ticketId}
+                    </Link>
+                  </div>
                 )}
               </div>
             ))}

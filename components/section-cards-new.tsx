@@ -200,7 +200,7 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
             <p className="text-muted-foreground text-xs mb-2">Creation → resolution/closure.</p>
             <div className="text-2xl font-semibold tabular-nums flex items-center gap-2">{avgTurnaround} {turnaroundDelta && <DeltaBadge {...turnaroundDelta} />}</div>
             <div className="mt-1 text-[11px] text-muted-foreground">Sample: {adminExtras?.avgTurnaroundSample ?? 0}</div>
-            <div className="mt-2 text-[11px]"><a href="/reports" className="text-blue-600 hover:underline">View detailed report →</a></div>
+            <div className="mt-2 text-[11px]"><a href="/reports" className="text-primary hover:underline">View detailed report →</a></div>
           </CardContent>
         </Card>
       )} */}
@@ -214,7 +214,7 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
             <p className="text-muted-foreground text-xs mb-2">For tickets you created or are assigned.</p>
             <div className="text-2xl font-semibold tabular-nums">{personalTurnaround}</div>
             <div className="mt-1 text-[11px] text-muted-foreground">Sample: {userExtras.sample}</div>
-            <div className="mt-2 text-[11px]"><Link href="/reports" className="text-blue-600 hover:underline" aria-label="Open reports page">Open my ticket report →</Link></div>
+            <div className="mt-2 text-[11px]"><Link href="/reports" className="text-primary hover:underline" aria-label="Open reports page">Open my ticket report →</Link></div>
           </CardContent>
         </Card>
       )}

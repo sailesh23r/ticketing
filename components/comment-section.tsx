@@ -153,21 +153,21 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
     // *italic* or _italic_ (not part of ** or __) ensure boundaries
     out = out.replace(/(^|[\s.,;:!?\-])(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)(?=$|[\s.,;:!?\-])/g, '$1<em>$2</em>');
     out = out.replace(/(^|[\s.,;:!?\-])_(?!_)([^_]+?)_(?=$|[\s.,;:!?\-])/g, '$1<em>$2</em>');
-    // Inline code `code`
-    out = out.replace(/`([^`]+?)`/g, '<code class="px-1 py-0.5 bg-gray-200 rounded text-xs">$1</code>');
+  // Inline code `code`
+  out = out.replace(/`([^`]+?)`/g, '<code class="px-1 py-0.5 bg-muted rounded text-xs">$1</code>');
     // Code blocks ```lang?\n ... ```
     out = out.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_m, lang, body) => {
       const raw = body.replace(/^[\n]+|[\n]+$/g,'');
-      const highlighted = lang ? (() => { try { return hljs.highlight(raw, { language: lang }).value; } catch { return escape(raw); } })() : escape(raw);
-      return `<pre class="bg-gray-900 text-gray-100 text-xs p-3 rounded overflow-auto"><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+  const highlighted = lang ? (() => { try { return hljs.highlight(raw, { language: lang }).value; } catch { return escape(raw); } })() : escape(raw);
+  return `<pre class="bg-muted text-foreground text-xs p-3 rounded overflow-auto"><code class="hljs language-${lang}">${highlighted}</code></pre>`;
     });
     // Lists - simple: lines starting with - or *
     out = out.replace(/(^|\n)[-*] (.+?)(?=\n[^-* ]|$)/g, (m) => {
       const items = m.trim().split(/\n/).map(l => l.replace(/^[*-]\s*/,''));
       if (items.length <= 1) return m; return `<ul class="list-disc ms-5">${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
     });
-    // Autolink bare URLs
-    out = out.replace(/(https?:\/\/[^\s<]+[^<.,;:!?)\]\s])/g, '<a href="$1" class="text-blue-600 underline" target="_blank" rel="noopener noreferrer">$1</a>');
+  // Autolink bare URLs
+  out = out.replace(/(https?:\/\/[^\s<]+[^<.,;:!?)\]\s])/g, '<a href="$1" class="text-primary underline" target="_blank" rel="noopener noreferrer">$1</a>');
     // Mentions styling: prefer exact known user names (multi-word) else fallback single token; ensure word boundary
     try {
       if (users && users.length) {
@@ -177,12 +177,12 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
             .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, r => `\\${r}`))
             .sort((a,b) => b.length - a.length); // longest first
           const mentionRegex = new RegExp(`(^|\\s)@(${escaped.join('|')})(?=\\s|$|[.,!?])`, 'g');
-          out = out.replace(mentionRegex, '$1<span class="text-blue-600 font-medium">@$2<\/span>');
+          out = out.replace(mentionRegex, '$1<span class="text-primary font-medium">@$2<\/span>');
         } else {
-          out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-blue-600 font-medium">@$2<\/span>');
+          out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-primary font-medium">@$2<\/span>');
         }
       } else {
-        out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-blue-600 font-medium">@$2<\/span>');
+        out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-primary font-medium">@$2<\/span>');
       }
     } catch {}
     // Underline tags already allowed (<u>) - re-enable by unescaping
@@ -222,12 +222,12 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
             .sort((a,b) => b.length - a.length);
           const mentionRegex = new RegExp(`(^|\\s)@(${escaped.join('|')})(?=\\s|$|[.,!?])`, 'g');
           // Editing overlay: use color only (no padding/weight) to avoid caret width drift
-          out = out.replace(mentionRegex, '$1<span class="text-blue-600">@$2</span>');
+          out = out.replace(mentionRegex, '$1<span class="text-primary">@$2</span>');
         } else {
-          out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-blue-600">@$2</span>');
+          out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-primary">@$2</span>');
         }
       } else {
-  out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-blue-600">@$2</span>');
+  out = out.replace(/(^|\s)@([A-Za-z0-9._-]{2,40})(?=\s|$|[.,!?])/g, '$1<span class="text-primary">@$2</span>');
       }
     } catch {}
     // Autolinks (shown but markers remain exact width because we don't remove chars)
@@ -238,7 +238,7 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
       if (!original) return _m;
       const m = /`([^`]+?)`/.exec(original);
       if (!m) return original;
-      return `<code class=\"px-1 py-0.5 bg-gray-200 rounded text-xs\">${escape(m[1])}</code>`;
+  return `<code class=\"px-1 py-0.5 bg-muted rounded text-xs\">${escape(m[1])}</code>`;
     });
     // Restore code blocks (syntax highlight but keep markers as hidden spans to preserve width difference)
     out = out.replace(/__CODEBLOCK_(\d+)__/g, (_m, i) => {
@@ -251,7 +251,7 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
       let highlighted: string;
       try { highlighted = lang ? hljs.highlight(body, { language: lang }).value : escape(body); } catch { highlighted = escape(body); }
       const marker = '```';
-      return `<pre class=\"bg-gray-900 text-gray-100 text-xs p-3 rounded overflow-auto\"><code class=\"hljs language-${lang}\">${hiddenWrap(marker+lang)}${highlighted}${hiddenWrap(marker)}</code></pre>`;
+  return `<pre class=\"bg-muted text-foreground text-xs p-3 rounded overflow-auto\"><code class=\"hljs language-${lang}\">${hiddenWrap(marker+lang)}${highlighted}${hiddenWrap(marker)}</code></pre>`;
     });
     // Line breaks
     out = out.replace(/\n/g,'<br />');
@@ -423,35 +423,35 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
 
       <div className="space-y-8 mb-8">
         {comments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageSquare className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
             <p>No comments yet. Be the first to comment!</p>
           </div>
         ) : (
           comments.map((comment) => (
-            <div key={comment._id} className="flex gap-4 border-b border-gray-200 pb-6">
+            <div key={comment._id} className="flex gap-4 border-b border-border pb-6">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-600">{(comment.author?.name || comment.author?.email || "U").charAt(0).toUpperCase()}</span>
+                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-muted-foreground">{(comment.author?.name || comment.author?.email || "U").charAt(0).toUpperCase()}</span>
                 </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-gray-900">{comment.author?.name || comment.author?.email || "Unknown User"}</span>
-                  <span className="text-sm text-gray-500">{formatDate(comment._creationTime)}</span>
+                  <span className="font-medium text-foreground">{comment.author?.name || comment.author?.email || "Unknown User"}</span>
+                  <span className="text-sm text-muted-foreground">{formatDate(comment._creationTime)}</span>
                   {comment.isInternal && (
                     <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">Internal</span>
                   )}
                 </div>
-                <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.content) }} />
+                <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.content) }} />
                 {comment.attachments && comment.attachments.length > 0 && (
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-2">
                       {comment.attachments.map((att, i) => (
-                        <a key={att.storageId || i} href={att.url || '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <Paperclip className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">{att.fileName}</span>
-                          {att.fileSize && <span className="text-xs text-gray-500">({Math.round((att.fileSize / 1024))}KB)</span>}
+                        <a key={att.storageId || i} href={att.url || '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:bg-accent transition-colors">
+                          <Paperclip className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{att.fileName}</span>
+                          {att.fileSize && <span className="text-xs text-muted-foreground">({Math.round((att.fileSize / 1024))}KB)</span>}
                         </a>
                       ))}
                     </div>
@@ -463,17 +463,17 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 pt-6">
+  <form onSubmit={handleSubmit} className="border-t border-border pt-6">
         {/* Textarea */}
         <div
           ref={dropRef}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`mb-2 relative rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 ${isDragging ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}
+          className={`mb-2 relative rounded-lg border border-input focus-within:ring-2 focus-within:ring-ring ${isDragging ? 'ring-2 ring-ring ring-offset-2' : ''}`}
         >
           {/* Highlight / preview layer */}
-          <div className="absolute inset-0 overflow-auto rounded-lg pointer-events-none select-none px-3 py-2 font-medium text-sm whitespace-pre-wrap break-words text-gray-800">
+          <div className="absolute inset-0 overflow-auto rounded-lg pointer-events-none select-none px-3 py-2 font-medium text-sm whitespace-pre-wrap break-words text-foreground">
             <style>{`.mk-hidden{opacity:0;white-space:pre}`}</style>
             <div dangerouslySetInnerHTML={{ __html: renderEditingMarkdown(newComment || '') + (newComment.endsWith('\n') ? '<br />' : '') }} />
           </div>
@@ -485,11 +485,11 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
             onPaste={onPaste}
             placeholder="Add a comment"
             rows={4}
-            className="relative w-full px-3 py-2 bg-transparent rounded-lg resize-none font-medium text-sm text-transparent caret-blue-600 selection:bg-blue-200 outline-none"
+            className="relative w-full px-3 py-2 bg-transparent rounded-lg resize-none font-medium text-sm text-transparent caret-primary selection:bg-primary selection:text-primary-foreground outline-none"
             style={{ WebkitTextFillColor: 'transparent' }}
           />
           {isDragging && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-medium text-blue-600 bg-blue-50/80 rounded-lg">Drop files to attach</div>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-medium text-primary bg-primary/10 rounded-lg">Drop files to attach</div>
           )}
         </div>
         {/* Live formatting hint */}
@@ -500,12 +500,12 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
         {/* Mentions dropdown */}
         {mentionOpen && mentionCandidates.length > 0 && textareaRef.current && (
           <div className="relative">
-            <ul className="absolute z-20 mt-1 w-56 max-h-56 overflow-auto rounded-md border bg-white shadow-md text-sm">
+            <ul className="absolute z-20 mt-1 w-56 max-h-56 overflow-auto rounded-md border bg-popover shadow-md text-sm">
               {mentionCandidates.map((c, i) => (
                 <li
                   key={c.id}
                   onMouseDown={(e) => { e.preventDefault(); selectMention(c); }}
-                  className={`px-3 py-1.5 cursor-pointer flex justify-between ${i === highlightIdx ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}
+                  className={`px-3 py-1.5 cursor-pointer flex justify-between ${i === highlightIdx ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
                 >
                   <span className="truncate">{c.label}</span>
                   <span className="text-xs opacity-70">{c.id.slice(0,8)}</span>
@@ -535,7 +535,7 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             title="Attach files"
-            className="p-2 rounded-md border bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 inline-flex items-center gap-1"
+            className="p-2 rounded-md border bg-background hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
           >
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
           </button>
@@ -548,14 +548,14 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
             {attachments.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachments.map((att) => (
-                  <div key={att.storageId} className="group flex items-center gap-2 px-2 py-1 bg-gray-100 rounded text-xs border">
-                    <Paperclip className="w-3 h-3 text-gray-500" />
+                  <div key={att.storageId} className="group flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs border">
+                    <Paperclip className="w-3 h-3 text-muted-foreground" />
                     <span className="max-w-[160px] truncate" title={att.fileName}>{att.fileName}</span>
-                    {att.fileSize && <span className="text-[10px] text-gray-500">{Math.round(att.fileSize/1024)}KB</span>}
+                    {att.fileSize && <span className="text-[10px] text-muted-foreground">{Math.round(att.fileSize/1024)}KB</span>}
                     <button
                       type="button"
                       onClick={() => removeAttachment(att.storageId!)}
-                      className="opacity-60 group-hover:opacity-100 text-gray-500 hover:text-red-600"
+                      className="opacity-60 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
                       aria-label="Remove attachment"
                     >
                       <X className="w-3 h-3" />
@@ -573,7 +573,7 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
                   return (
                     <div
                       key={key}
-                      className="relative group border rounded-md p-2 w-24 h-24 flex flex-col items-center justify-center bg-white shadow-sm overflow-hidden"
+                      className="relative group border rounded-md p-2 w-24 h-24 flex flex-col items-center justify-center bg-card shadow-sm overflow-hidden"
                       draggable
                       onDragStart={(e) => { e.dataTransfer.setData('text/plain', String(idx)); }}
                       onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect='move'; }}
@@ -583,13 +583,13 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={url} alt={f.name} className="object-cover absolute inset-0 w-full h-full" />
                       ) : (
-                        <div className="flex flex-col items-center text-gray-400 text-[10px]">
+                        <div className="flex flex-col items-center text-muted-foreground text-[10px]">
                           <FileIcon className="w-5 h-5 mb-1" />
                           <span className="px-1 text-center line-clamp-3 break-all">{f.name}</span>
                         </div>
                       )}
-                      <button type="button" onClick={() => removePendingFile(key)} className="absolute top-1 right-1 bg-white/80 hover:bg-white rounded-full p-0.5 shadow opacity-0 group-hover:opacity-100 transition" aria-label="Remove file">
-                        <X className="w-3 h-3 text-gray-600" />
+                      <button type="button" onClick={() => removePendingFile(key)} className="absolute top-1 right-1 bg-background/80 hover:bg-background rounded-full p-0.5 shadow opacity-0 group-hover:opacity-100 transition" aria-label="Remove file">
+                        <X className="w-3 h-3 text-foreground" />
                       </button>
                       {isImg && <span className="absolute bottom-1 left-1 bg-black/50 text-white rounded px-1 py-[1px] text-[10px]">{Math.round(f.size/1024)}KB</span>}
                     </div>
@@ -613,7 +613,7 @@ export default function CommentSection({ ticketId }: { ticketId: string }) {
 
           <div className="flex items-center gap-3">
             {uploading && (
-              <div className="text-xs text-gray-500">Uploading {uploadProgress.done}/{uploadProgress.total}</div>
+              <div className="text-xs text-muted-foreground">Uploading {uploadProgress.done}/{uploadProgress.total}</div>
             )}
             <Button
               type="submit"

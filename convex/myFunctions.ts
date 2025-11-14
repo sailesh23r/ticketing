@@ -83,7 +83,30 @@ export const createTicket = mutation({
     const today = new Date();
     const ticketId = `TCK-${formatDate(today.getFullYear(), today.getMonth(), today.getDate())}-${String(seq).padStart(4, "0")}`;
 
-    const dueAt = computeSlaDueAt(args.priority, Date.now());
+    // Compute dueAt using project-specific SLA if configured; otherwise fallback
+    let dueAt: number | undefined;
+    const nowTs = Date.now();
+    if (args.project) {
+      const proj = (await ctx.db
+        .query("projects")
+        .withIndex("by_slug", (q) => q.eq("slug", args.project as string))
+        .first()) as Doc<"projects"> | null;
+      if (proj) {
+        if (proj.suspended === true) {
+          throw new Error("Project is suspended; ticket creation is disabled");
+        }
+        const p0 = proj.slaP0Hours as number | undefined;
+        const p1 = proj.slaP1Hours as number | undefined;
+        const p2 = proj.slaP2Hours as number | undefined;
+        const p3 = proj.slaP3Hours as number | undefined;
+        const hoursMap: Record<string, number | undefined> = { P0: p0, P1: p1, P2: p2, P3: p3 };
+        const hrs = hoursMap[args.priority];
+        if (typeof hrs === 'number' && hrs >= 0) {
+          dueAt = hrs === 0 ? nowTs : nowTs + hrs * 60 * 60 * 1000;
+        }
+      }
+    }
+    if (dueAt === undefined) dueAt = computeSlaDueAt(args.priority, nowTs);
     const now = Date.now();
 
     // Upsert a basic user record so notifications/role lookups work

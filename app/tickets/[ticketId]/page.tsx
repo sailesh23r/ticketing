@@ -148,18 +148,18 @@ export default function TicketThreadPage() {
   return (
     <div className=" mx-auto p-6">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+  <button onClick={() => router.back()} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="p-6 border-b border-border">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
+                <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
                 <span className={`px-3 py-1 text-sm font-medium rounded-full border ${(() => {
                   const map: Record<string, string> = { P0: 'bg-red-100 text-red-800 border-red-200', P1: 'bg-orange-100 text-orange-800 border-orange-200', P2: 'bg-yellow-100 text-yellow-800 border-yellow-200', P3: 'bg-green-100 text-green-800 border-green-200' };
                   return map[t.priority ?? ''] ?? 'bg-gray-100 text-gray-800 border-gray-200';
@@ -174,7 +174,7 @@ export default function TicketThreadPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
+              <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.projectColor ?? undefined }} />
                   <span>{t.project ?? '—'}</span>
@@ -192,8 +192,8 @@ export default function TicketThreadPage() {
               {t.dueAt && (
                 <div className="flex items-center gap-4 text-sm mb-4">
                   <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{Math.max(0, Math.round(((Date.now() - (t.createdAt ?? t._creationTime ?? Date.now())) / (1000 * 60 * 60))))}h elapsed / {(t.dueAt && Math.max(1, Math.round(((t.dueAt - (t.createdAt ?? t._creationTime ?? Date.now())) / (1000 * 60 * 60))))) || '-'}h SLA</span>
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{Math.max(0, Math.round(((Date.now() - (t.createdAt ?? t._creationTime ?? Date.now())) / (1000 * 60 * 60))))}h elapsed / {(t.dueAt && Math.max(1, Math.round(((t.dueAt - (t.createdAt ?? t._creationTime ?? Date.now())) / (1000 * 60 * 60))))) || '-'}h SLA</span>
                   </div>
                   {Date.now() > (t.dueAt ?? 0) && (
                     <span className="text-red-600 font-medium">Overdue</span>
@@ -206,7 +206,7 @@ export default function TicketThreadPage() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Status:</span>
+              <span className="text-sm font-medium text-foreground">Status:</span>
               <Select onValueChange={async (val: string) => {
                 try {
                   await setStatus({ ticketId: t.ticketId, status: val as 'open' | 'in_progress' | 'resolved' | 'closed' });
@@ -229,7 +229,7 @@ export default function TicketThreadPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Assigned to:</span>
+              <span className="text-sm font-medium text-foreground">Assigned to:</span>
               <AssignControl
                 userId={userId}
                 assignedTo={t.assignedToUser}
@@ -264,18 +264,18 @@ export default function TicketThreadPage() {
           </div>
         </div>
 
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+        <div className="p-6 border-b border-border">
+          <h3 className="text-lg font-semibold text-foreground mb-3">Description</h3>
           <div className="prose prose-sm max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap">{t.description}</p>
+            <p className="text-foreground whitespace-pre-wrap">{t.description}</p>
           </div>
 
           {t.tags && t.tags.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Tags</h4>
+              <h4 className="text-sm font-medium text-foreground mb-2">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {t.tags.map((tag: string, index: number) => (
-                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">{tag}</span>
+                  <span key={index} className="px-2 py-1 bg-muted text-foreground text-xs rounded">{tag}</span>
                 ))}
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function TicketThreadPage() {
 
           {t.attachments && t.attachments.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Attachments</h4>
+              <h4 className="text-sm font-medium text-foreground mb-2">Attachments</h4>
               <div className="flex flex-wrap gap-3">
                 {t.attachments.map((url: string, idx: number) => (
                   <Attachment key={idx} url={url} idx={idx} onOpen={(u) => setPreviewUrl(u)} />
@@ -361,7 +361,7 @@ function AssignControl({ userId, assignedTo, isAssigningDefault, projectMembers,
           <button
             disabled={!userId}
             onClick={async () => { if (userId) await onAssign(userId); }}
-            className="flex items-center gap-1 px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded transition-colors"
+            className="flex items-center gap-1 px-3 py-1 text-sm text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-40 rounded transition-colors"
           >
             Start working
           </button>
@@ -377,7 +377,7 @@ function AssignControl({ userId, assignedTo, isAssigningDefault, projectMembers,
     return (
       <select
         onChange={(e) => onAssign(e.target.value || null)}
-        className="px-3 py-1 border border-gray-300 rounded text-sm"
+  className="px-3 py-1 border border-input rounded text-sm"
         defaultValue=""
       >
         <option value="">Select assignee</option>
@@ -394,7 +394,7 @@ function AssignControl({ userId, assignedTo, isAssigningDefault, projectMembers,
     return (
       <select
         onChange={(e) => onAssign(e.target.value || null)}
-        className="px-3 py-1 border border-gray-300 rounded text-sm"
+  className="px-3 py-1 border border-input rounded text-sm"
         value={assignedTo}
       >
         {userId && <option value={userId}>Me</option>}
@@ -412,7 +412,7 @@ function AssignControl({ userId, assignedTo, isAssigningDefault, projectMembers,
       {canReassign && (
         <button
           onClick={() => setIsAssigning(true)}
-          className="flex items-center gap-1 px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+          className="flex items-center gap-1 px-3 py-1 text-xs text-primary hover:bg-accent rounded transition-colors"
         >
           <Edit className="w-3 h-3" /> Change
         </button>
@@ -426,14 +426,14 @@ function ProjectControl({ current, canEdit, projects, onChange }: { current?: st
   if (!canEdit) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">Project:</span>
-        <span className="text-sm text-gray-600">{current || '—'}</span>
+  <span className="text-sm font-medium text-foreground">Project:</span>
+  <span className="text-sm text-muted-foreground">{current || '—'}</span>
       </div>
     );
   }
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-gray-700">Project:</span>
+  <span className="text-sm font-medium text-foreground">Project:</span>
       {editing ? (
         <Select
           value={current || '__none'}
@@ -443,7 +443,7 @@ function ProjectControl({ current, canEdit, projects, onChange }: { current?: st
             setEditing(false);
           }}
         >
-          <SelectTrigger className="w-[220px] px-3 py-1 rounded text-sm border-gray-300">
+          <SelectTrigger className="w-[220px] px-3 py-1 rounded text-sm border-input">
             <SelectValue placeholder="Select project" />
           </SelectTrigger>
           <SelectContent>
@@ -455,10 +455,10 @@ function ProjectControl({ current, canEdit, projects, onChange }: { current?: st
         </Select>
       ) : (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">{current || '—'}</span>
+          <span className="text-sm text-muted-foreground">{current || '—'}</span>
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="flex items-center gap-1 px-2 py-1 text-xs text-primary hover:bg-accent rounded transition-colors"
           >
             <Edit className="w-3 h-3" /> Change
           </button>

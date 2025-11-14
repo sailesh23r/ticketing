@@ -340,8 +340,8 @@ export default function SharedReportClient({ token }: { token: string }) {
                   </thead>
                   <tbody className="[&_tr]:transition-colors">
                     {report.rows.map(r => {
-                      const priorityMeta = priorityMap[r.priority] || { label: r.priority, cls: 'bg-gray-200 text-gray-700 border border-gray-300' };
-                      const statusMeta = statusMap[r.status] || { label: r.status, cls: 'bg-gray-200 text-gray-700 border border-gray-300' };
+                      const priorityMeta = priorityMap[r.priority] || { label: r.priority, cls: 'bg-muted text-foreground border border-border' };
+                      const statusMeta = statusMap[r.status] || { label: r.status, cls: 'bg-muted text-foreground border border-border' };
                       const createdStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
                       const updatedStr = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
                       const turnaroundDisplay = typeof r.turnaroundMs==='number'? formatDuration(r.turnaroundMs) : '—';
@@ -350,7 +350,7 @@ export default function SharedReportClient({ token }: { token: string }) {
                       return (
                         <React.Fragment key={r.ticketId}>
                           <tr className="hover:bg-muted/40">
-                            <td className="px-2 py-2 border border-gray-100">
+                            <td className="px-2 py-2 border border-border/50">
                               <button
                                 aria-label={isOpen ? 'Collapse row' : 'Expand row'}
                                 aria-expanded={isOpen}
