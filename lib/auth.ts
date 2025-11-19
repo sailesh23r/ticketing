@@ -31,7 +31,7 @@ export const auth = betterAuth({
       clientSecret: process.env.MICROSOFT_CLIENT_SECRETVALUE as string,
       tenantId: '3bfbf68b-280a-4c52-8d23-e72ef5818d23',
       authority: `https://login.microsoftonline.com`,
-      prompt: "select_account",
+      prompt: "login",
     },
   },
 
