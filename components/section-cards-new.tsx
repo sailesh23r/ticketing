@@ -44,6 +44,7 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
   const totalTickets = stats?.totals.total ?? 0;
   const resolvedTickets = stats?.totals.resolved ?? 0;
   const resolutionRate = totalTickets ? Math.round((resolvedTickets / totalTickets) * 100) : 0;
+  const pendingMine = (stats?.mine.openAssigned ?? 0) + (stats?.mine.inProgressAssigned ?? 0);
 
   const priorityDist = useMemo(() => {
     const base: Record<PriorityKey, number> = { P0: 0, P1: 0, P2: 0, P3: 0 };
@@ -103,8 +104,16 @@ export function SectionCardsNew(props: SectionCardsNewProps = {}) {
         </CardHeader>
         <CardContent>
           {isAdmin && <p className="text-sm font-medium">All active support tickets.</p>}
+          <p className="mt-2 text-sm font-medium">
+            Pending for you: <span className="font-semibold">{loading ? "…" : pendingMine}</span>
+          </p>
         </CardContent>
-        <CardFooter className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{loading ? "…" : totalTickets}</CardFooter>
+        <CardFooter className="flex items-baseline justify-between @[250px]/card:text-3xl">
+          <span className="text-2xl font-semibold tabular-nums">{loading ? "…" : totalTickets}</span>
+          <span className="text-xs font-medium bg-background/20 rounded px-2 py-1">
+            Mine: {loading ? "…" : pendingMine}
+          </span>
+        </CardFooter>
       </Card>
 
       {/* Avg Response Time */}

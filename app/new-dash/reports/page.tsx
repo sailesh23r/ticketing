@@ -5,7 +5,6 @@ import { api } from '@/convex/_generated/api';
 // Removed unused Card imports
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { DateRangePicker, DateRangeValue } from '@/components/date-range-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FileSpreadsheet, Share2, Filter, ChevronDown, ChevronRight } from 'lucide-react';
@@ -334,11 +333,33 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Summary badges */}
+      {/* Summary badges with clickable status filter */}
       {report && (
         <div className="flex flex-wrap gap-2 text-xs">
-          <Badge variant="secondary" className="gap-1">Rows <span className="font-semibold">{rows.length}</span></Badge>
-          {Object.entries(grouped).map(([s,c])=> <span key={s} className="inline-flex items-center gap-1 rounded border px-2 py-1">{s}<span className="font-medium">{c}</span></span>)}
+          <button
+            type="button"
+            onClick={() => setStatusFilters([])}
+            className={`inline-flex items-center gap-1 rounded border px-2 py-1 transition ${statusFilters.length === 0 ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'} border-border`}
+            aria-pressed={statusFilters.length === 0}
+            aria-label="Show all rows"
+          >
+            Rows <span className="font-semibold">{rows.length}</span>
+          </button>
+          {Object.entries(grouped).map(([s,c])=> {
+            const active = statusFilters.includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleStatus(s)}
+                className={`inline-flex items-center gap-1 rounded border px-2 py-1 transition border-border ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                aria-pressed={active}
+                aria-label={`Filter by status ${s}`}
+              >
+                {s}<span className="font-medium">{c}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 

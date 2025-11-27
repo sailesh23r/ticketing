@@ -7,7 +7,6 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { DateRangePicker, DateRangeValue } from '@/components/date-range-picker';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Share2, FileSpreadsheet } from 'lucide-react';
@@ -62,6 +61,13 @@ export function TicketReports({ exportOnly = false }: { exportOnly?: boolean }) 
     }
     return byStatus;
   }, [rows]);
+
+  // Status filter via clickable badges
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const filteredRows = useMemo(() => {
+    if (!statusFilter) return rows;
+    return rows.filter(r => r.status === statusFilter);
+  }, [rows, statusFilter]);
 
   const priorityMap: Record<string, { label: string; cls: string }> = {
     P0: { label: 'Critical', cls: 'bg-red-100 text-red-800 border-red-200' },
@@ -361,10 +367,30 @@ export function TicketReports({ exportOnly = false }: { exportOnly?: boolean }) 
             )}
             {shareState.error && <p className="mt-3 text-xs text-red-600">{shareState.error}</p>}
             <div className="mb-3 flex flex-wrap gap-2 text-xs">
-              <Badge variant="secondary" className="gap-1">Rows <span className="font-semibold">{report.count}</span></Badge>
-              {Object.entries(grouped).map(([s, c]) => (
-                <span key={s} className="inline-flex items-center gap-1 rounded border px-2 py-1">{s}<span className="font-medium">{c}</span></span>
-              ))}
+              <button
+                type="button"
+                onClick={() => setStatusFilter(undefined)}
+                className={`inline-flex items-center gap-1 rounded border px-2 py-1 transition ${!statusFilter ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'} border-border`}
+                aria-pressed={!statusFilter}
+                aria-label="Show all rows"
+              >
+                Rows <span className="font-semibold">{filteredRows.length}/{report.count}</span>
+              </button>
+              {Object.entries(grouped).map(([s, c]) => {
+                const active = statusFilter === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatusFilter(prev => prev === s ? undefined : s)}
+                    className={`inline-flex items-center gap-1 rounded border px-2 py-1 transition border-border ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    aria-pressed={active}
+                    aria-label={`Filter by status ${s}`}
+                  >
+                    {s}<span className="font-medium">{c}</span>
+                  </button>
+                );
+              })}
             </div>
             <div className="overflow-auto mx-0">
               <table
@@ -387,7 +413,7 @@ export function TicketReports({ exportOnly = false }: { exportOnly?: boolean }) 
                   </tr>
                 </thead>
                 <tbody className="[&_tr]:transition-colors">
-                  {rows.map(r => {
+                  {filteredRows.map(r => {
                     const er = r as RowExtended;
                     const createdDateStr = new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
                     const updatedDateStr = new Date(r.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -426,7 +452,7 @@ export function TicketReports({ exportOnly = false }: { exportOnly?: boolean }) 
                       </tr>
                     );
                   })}
-                  {rows.length === 0 && (
+                  {filteredRows.length === 0 && (
                     <tr>
                       <td colSpan={11} className="text-center py-8 text-xs text-muted-foreground border border-gray-100">No tickets in range.</td>
                     </tr>
