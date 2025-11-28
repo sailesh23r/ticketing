@@ -43,6 +43,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  runtime:  "nodejs",
   // Intercept most pages, but skip Next internals, static assets, and ALL /api routes
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|sw.js|assets/|public/|images/|api/).*)",
