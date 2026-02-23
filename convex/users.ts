@@ -164,8 +164,7 @@ export const upsertFromAuth = mutation({
       .first();
 
     // Map Better Auth role (single string) to Convex roles array
-    const roles: string[] = ["user"]; // default
-    if (args.role && args.role !== "user") roles.push(args.role);
+    const roles: string[] = [args.role || "user"];
 
     if (!existing) {
       await ctx.db.insert("users", {

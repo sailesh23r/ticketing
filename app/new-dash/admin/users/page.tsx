@@ -51,7 +51,7 @@ export default function AdminUsersPage() {
   const createProject = useMutation(api.projects.createProject);
   const upsertFromAuth = useMutation(api.users.upsertFromAuth);
 
-  // const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // New user form state
   const [newUser, setNewUser] = useState<{ email: string; name: string; tempPassword: string; role: string; projects: string[]; teams: string[] }>({ email: "", name: "", tempPassword: "", role: "user", projects: [], teams: [] });
@@ -109,8 +109,12 @@ export default function AdminUsersPage() {
   }
 
   async function createUser() {
-    if (!newUser.email || !newUser.name || !newUser.tempPassword) return;
+    if (!newUser.email || !newUser.name || !newUser.tempPassword) {
+      setMsg({ type: 'error', text: 'Please fill in all required fields (email, name, and password)' });
+      return;
+    }
     setCreating(true);
+    setMsg(null);
     try {
       const res = await fetch("/api/admin/user/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: newUser.email, name: newUser.name, tempPassword: newUser.tempPassword, role: newUser.role }) });
       if (res.ok) {
@@ -119,13 +123,14 @@ export default function AdminUsersPage() {
         if (newUser.projects.length > 0) await setProjects({ authUserId: user.id, projects: newUser.projects });
         if (newUser.teams.length > 0) await setTeams({ authUserId: user.id, teams: newUser.teams });
         setNewUser({ email: "", name: "", tempPassword: "", role: "user", projects: [], teams: [] });
-  // User created successfully
+        setMsg({ type: 'success', text: `User ${user.email} created successfully!` });
         setNewUserDialogOpen(false);
       } else {
-  // Failed to create user
+        const errorText = await res.text();
+        setMsg({ type: 'error', text: `Failed to create user: ${errorText || 'Unknown error'}` });
       }
-    } catch {
-  // Failed to create user
+    } catch (error) {
+      setMsg({ type: 'error', text: `Failed to create user: ${error instanceof Error ? error.message : 'Network error'}` });
     } finally {
       setCreating(false);
     }
@@ -171,10 +176,18 @@ export default function AdminUsersPage() {
       <Card>
         <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <CardTitle>Admin — Users</CardTitle>
-          <Button onClick={() => setNewUserDialogOpen(true)}>New User</Button>
+          <Button onClick={() => { setMsg(null); setNewUserDialogOpen(true); }}>New User</Button>
         </CardHeader>
         <CardContent>
-      {/* {msg && <div className="text-sm text-muted-foreground">{msg}</div>} */}
+      {msg && (
+        <div className={`mb-4 p-3 rounded-md text-sm ${
+          msg.type === 'error' 
+            ? 'bg-red-50 text-red-700 border border-red-200' 
+            : 'bg-green-50 text-green-700 border border-green-200'
+        }`}>
+          {msg.text}
+        </div>
+      )}
 
       {/* Create User Dialog */}
       <Dialog open={newUserDialogOpen}>
@@ -222,7 +235,7 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setNewUserDialogOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setMsg(null); setNewUserDialogOpen(false); }}>Cancel</Button>
             <Button onClick={createUser} disabled={creating || !newUser.email || !newUser.name || !newUser.tempPassword}>{creating ? 'Creating…' : 'Create'}</Button>
           </DialogFooter>
         </DialogContent>
@@ -294,6 +307,7 @@ export default function AdminUsersPage() {
                         variant="outline"
                         className="h-7 text-[11px]"
                         onClick={() => {
+                          setMsg(null);
                           setEditUserDialog({ open: true, user: u })
                           setEditForm({
                             name: u.name || "",
@@ -422,19 +436,20 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditUserDialog({ open: false })}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setMsg(null); setEditUserDialog({ open: false }); }}>Cancel</Button>
             <Button
               onClick={async () => {
                 const u = editUserDialog.user; if (!u) return;
                 setEditSaving(true);
+                setMsg(null);
                 try {
                   await upsertFromAuth({ authUserId: u.authUserId, email: u.email, name: editForm.name || undefined, role: editForm.role || undefined });
                   await setProjects({ authUserId: u.authUserId, projects: editForm.projects });
                   await setTeams({ authUserId: u.authUserId, teams: editForm.teams });
-                  // Updated user
+                  setMsg({ type: 'success', text: `User ${u.email} updated successfully!` });
                   setEditUserDialog({ open: false });
-                } catch {
-                  // Failed to update user
+                } catch (error) {
+                  setMsg({ type: 'error', text: `Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}` });
                 } finally { setEditSaving(false); }
               }}
               disabled={editSaving || !editUserDialog.user}
