@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import MultipleSelector from "@/components/ui/multiselect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { UsersTable } from "@/components/admin/users-test/users-table";
@@ -50,8 +51,16 @@ export default function AdminUsersPage() {
   const setTeams = useMutation(api.users.setTeams);
   const createProject = useMutation(api.projects.createProject);
   const upsertFromAuth = useMutation(api.users.upsertFromAuth);
+  const deleteConvexUser = useMutation(api.users.deleteUser);
 
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Delete user state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    user?: { authUserId: string; email: string; name?: string };
+  }>({ open: false });
+  const [deleting, setDeleting] = useState(false);
 
   // New user form state
   const [newUser, setNewUser] = useState<{ email: string; name: string; tempPassword: string; role: string; projects: string[]; teams: string[] }>({ email: "", name: "", tempPassword: "", role: "user", projects: [], teams: [] });
@@ -133,6 +142,31 @@ export default function AdminUsersPage() {
       setMsg({ type: 'error', text: `Failed to create user: ${error instanceof Error ? error.message : 'Network error'}` });
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function deleteUser(authUserId: string, email: string) {
+    setDeleting(true);
+    setMsg(null);
+    try {
+      // 1. Delete from Better Auth (Prisma) — cascades sessions, accounts, 2FA
+      const res = await fetch("/api/admin/user/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: authUserId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      // 2. Delete from Convex
+      await deleteConvexUser({ authUserId });
+      setMsg({ type: 'success', text: `User ${email} deleted successfully.` });
+      setDeleteDialog({ open: false });
+    } catch (error) {
+      setMsg({ type: 'error', text: `Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -302,23 +336,38 @@ export default function AdminUsersPage() {
                       )}
                     </td>
                     <td className="px-3 py-2 border border-gray-100">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-[11px]"
-                        onClick={() => {
-                          setMsg(null);
-                          setEditUserDialog({ open: true, user: u })
-                          setEditForm({
-                            name: u.name || "",
-                            role: (u.roles && u.roles[0]) || "user",
-                            projects: [...(u.projects || [])],
-                            teams: [...(u.teams || [])],
-                          })
-                        }}
-                      >
-                        Edit User
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[11px]"
+                          onClick={() => {
+                            setMsg(null);
+                            setEditUserDialog({ open: true, user: u })
+                            setEditForm({
+                              name: u.name || "",
+                              role: (u.roles && u.roles[0]) || "user",
+                              projects: [...(u.projects || [])],
+                              teams: [...(u.teams || [])],
+                            })
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        {u.authUserId !== userId && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[11px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => {
+                              setMsg(null);
+                              setDeleteDialog({ open: true, user: { authUserId: u.authUserId, email: u.email, name: u.name } });
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -383,6 +432,34 @@ export default function AdminUsersPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete User Confirmation */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => { if (!open) setDeleteDialog({ open: false }); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete <strong>{deleteDialog.user?.name || deleteDialog.user?.email}</strong> ({deleteDialog.user?.email})?
+              This will remove the user from both the authentication system and all Convex data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteDialog.user) {
+                  deleteUser(deleteDialog.user.authUserId, deleteDialog.user.email);
+                }
+              }}
+            >
+              {deleting ? 'Deleting…' : 'Delete User'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Edit User Dialog */}
       <Dialog open={editUserDialog.open}>
         <DialogContent>
@@ -443,6 +520,17 @@ export default function AdminUsersPage() {
                 setEditSaving(true);
                 setMsg(null);
                 try {
+                  // 1. Update role in Better Auth (Prisma) database
+                  const roleRes = await fetch("/api/admin/user/role", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: u.authUserId, role: editForm.role }),
+                  });
+                  if (!roleRes.ok) {
+                    const errText = await roleRes.text();
+                    throw new Error(`Failed to update role in auth: ${errText}`);
+                  }
+                  // 2. Update in Convex (roles, name, email)
                   await upsertFromAuth({ authUserId: u.authUserId, email: u.email, name: editForm.name || undefined, role: editForm.role || undefined });
                   await setProjects({ authUserId: u.authUserId, projects: editForm.projects });
                   await setTeams({ authUserId: u.authUserId, teams: editForm.teams });
