@@ -53,6 +53,7 @@ model Session {
 
   @@unique([token])
   @@map("session")
+  @@index([userId])
 }
 
 model Account {
@@ -72,6 +73,7 @@ model Account {
   updatedAt             DateTime
 
   @@map("account")
+  @@index([userId])
 }
 
 model Verification {
@@ -83,6 +85,7 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+  @@index([identifier])
 }
 
 model TwoFactor {
@@ -93,6 +96,8 @@ model TwoFactor {
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("twoFactor")
+  @@index([secret])
+  @@index([userId])
 }
 
 model Jwks {
@@ -100,6 +105,8 @@ model Jwks {
   publicKey  String
   privateKey String
   createdAt  DateTime
+
+  expiresAt DateTime?
 
   @@map("jwks")
 }
