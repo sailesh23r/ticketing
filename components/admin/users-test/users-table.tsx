@@ -61,10 +61,12 @@ const fetcher = async (url: string) => {
 // (account icon rendering removed temporarily while showing organizations instead)
 
 function extractRoles(session: unknown): string[] {
-  if (session && typeof session === "object" && "roles" in (session as Record<string, unknown>)) {
-    const val = (session as Record<string, unknown>)["roles"];
-    if (Array.isArray(val) && val.every((v) => typeof v === "string")) {
-      return val as string[];
+  if (session && typeof session === "object") {
+    const s = session as Record<string, unknown>;
+    // Check session.user.role (set by customSession plugin)
+    const user = s["user"] as Record<string, unknown> | undefined;
+    if (user && typeof user["role"] === "string" && user["role"]) {
+      return [user["role"] as string];
     }
   }
   return [];

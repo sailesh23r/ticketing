@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import fs from 'fs'
-import path from 'path'
+import { ConvexHttpClient } from 'convex/browser'
+import { api } from '@/convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers })
@@ -9,28 +11,17 @@ export async function POST(req: NextRequest) {
   if (!body?.subscription) return new NextResponse('Bad Request', { status: 400 })
 
   const sub = body.subscription
+  const userId = session?.user?.id ?? 'anonymous'
 
-  // Persist to a local file for development convenience (always, regardless of other env vars)
+  // Store subscription in Convex (primary storage)
   try {
-    const dataDir = path.join(process.cwd(), '.data')
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
-    const file = path.join(dataDir, 'subscriptions.json')
-    let arr: Array<Record<string, unknown>> = []
-    if (fs.existsSync(file)) {
-      try { arr = JSON.parse(fs.readFileSync(file, 'utf8') || '[]') as Array<Record<string, unknown>> } catch { arr = [] }
-    }
-    // Deduplicate by subscription.endpoint (safe access)
-    const exists = arr.find((r) => {
-      const s = r?.subscription as Record<string, unknown> | undefined
-      return s && typeof s.endpoint === 'string' && typeof sub?.endpoint === 'string' && s.endpoint === sub.endpoint
+    const result = await convex.mutation(api.storeSubscription.store, {
+      userId,
+      subscription: sub,
     })
-    if (!exists) {
-      arr.push({ userId: session?.user?.id ?? 'anonymous', subscription: sub, createdAt: Date.now() })
-      fs.writeFileSync(file, JSON.stringify(arr, null, 2))
-      return NextResponse.json({ ok: true, stored: 'local', added: true })
-    }
-    return NextResponse.json({ ok: true, stored: 'local', added: false })
-  } catch {
-    return new NextResponse('Failed to save', { status: 500 })
+    return NextResponse.json({ ok: true, stored: 'convex', added: result.added })
+  } catch (err) {
+    console.error('Failed to store subscription in Convex:', err)
+    return new NextResponse('Failed to save subscription', { status: 500 })
   }
 }

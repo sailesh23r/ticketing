@@ -41,8 +41,8 @@ export async function updateUserDetails(params: UpdateUserParams): Promise<Updat
   const h = await headers();
   const req = new NextRequest("http://localhost/api/auth/session", { headers: h });
   const session = await auth.api.getSession(req);
-    const roles = (session as unknown as { roles?: string[] } | null)?.roles ?? [];
-    const isPrivileged = Array.isArray(roles) && roles.some((r) => ["admin", "Teamadmin"].includes((r || "").toLowerCase()));
+    const userRole = ((session as unknown as { user?: { role?: string } } | null)?.user?.role ?? "").toLowerCase();
+    const isPrivileged = ["admin", "teamadmin"].includes(userRole);
     if (!session || !isPrivileged) {
       return { ok: false, error: "Unauthorized" };
     }

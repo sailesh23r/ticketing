@@ -32,6 +32,14 @@ export const auth = betterAuth({
       tenantId: '3bfbf68b-280a-4c52-8d23-e72ef5818d23',
       authority: `https://login.microsoftonline.com`,
       prompt: "login",
+      // Force email to lowercase so it matches existing DB records
+      mapProfileToUser: (profile) => {
+        return {
+          email: (profile.email ?? "").toLowerCase(),
+          name: profile.name,
+          image: profile.picture,
+        };
+      },
     },
   },
 
@@ -48,12 +56,19 @@ export const auth = betterAuth({
       },
     }),
     customSession(async ({ user, session }) => {
-      const roles = await getUserDetails(session.userId);
-      return {
-        roles,
-        user: { ...user, newField: "newField" },
-        session,
-      };
+      try {
+        const role = await getUserDetails(session.userId);
+        return {
+          user: { ...user, role: role ?? "user", newField: "newField" },
+          session,
+        };
+      } catch (e) {
+        console.error("customSession error for user", session.userId, e);
+        return {
+          user: { ...user, role: "user", newField: "newField" },
+          session,
+        };
+      }
     }),
     admin(),
     jwt({

@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { subscribeUser } from "@/lib/subscribeUser";
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
 interface NotificationRow {
@@ -22,8 +23,11 @@ interface NotificationRow {
 }
 
 export default function GlobalNotifications() {
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id as string | undefined;
   const notifications = useQuery(api.notifications.listMyNotifications, {}) as NotificationRow[] | undefined;
   const markRead = useMutation(api.notifications.markRead);
+  const storeSubscription = useMutation(api.storeSubscription.store);
   const unread = (notifications || []).filter(n => !n.read);
   const [open, setOpen] = React.useState(false);
   const [bulkBusy, setBulkBusy] = React.useState(false);
@@ -79,12 +83,24 @@ export default function GlobalNotifications() {
         return;
       }
       const subscription = await subscribeUser(vapid);
-      // Send to server to register
-      await fetch('/api/web-push/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription }),
-      });
+      // Store subscription in Convex (primary storage)
+      if (userId) {
+        try {
+          await storeSubscription({ userId, subscription: subscription.toJSON() as unknown as Record<string, unknown> });
+        } catch (e) {
+          console.warn('Failed to store subscription in Convex', e);
+        }
+      }
+      // Also store via API route as fallback
+      try {
+        await fetch('/api/web-push/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription }),
+        });
+      } catch {
+        // Non-critical
+      }
       setIsSubscribed(true);
     } catch (e) {
       console.error('Enable push failed', e);

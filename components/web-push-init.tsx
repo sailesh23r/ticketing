@@ -4,9 +4,9 @@ import { registerWebPush } from "@/components/use-web-push";
 
 export function WebPushInit() {
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_WEBPUSH_VAPID_PUBLIC;
+    const key = process.env.NEXT_PUBLIC_WEBPUSH_VAPID || process.env.NEXT_PUBLIC_WEBPUSH_VAPID_PUBLIC;
     if (!key) {
-      console.warn("WebPushInit: NEXT_PUBLIC_WEBPUSH_VAPID_PUBLIC not set; skipping registration");
+      console.warn("WebPushInit: NEXT_PUBLIC_WEBPUSH_VAPID not set; skipping registration");
       return;
     }
     if (typeof window === 'undefined') return;
