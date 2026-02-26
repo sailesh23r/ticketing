@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Allow dev server access from production domain (only relevant in dev mode)
+  allowedDevOrigins: ["https://cyberloop.xeltr.com", "http://cyberloop.xeltr.com"],
   // Keep existing config options here if you add more later.
   transpilePackages: ["tailwind-merge"],
 };
