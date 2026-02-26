@@ -34,11 +34,41 @@ export const auth = betterAuth({
       prompt: "login",
       // Force email to lowercase so it matches existing DB records
       mapProfileToUser: (profile) => {
-        return {
+        console.log("[AUTH DEBUG] mapProfileToUser called with profile:", JSON.stringify({
+          email: profile.email,
+          name: profile.name,
+          id: profile.sub ?? profile.id,
+        }));
+        const mapped = {
           email: (profile.email ?? "").toLowerCase(),
           name: profile.name,
           image: profile.picture,
         };
+        console.log("[AUTH DEBUG] mapProfileToUser returning:", JSON.stringify(mapped));
+        return mapped;
+      },
+    },
+  },
+
+  // Database hooks to log user lookups
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          console.log("[AUTH DEBUG] DB hook: CREATING user:", JSON.stringify({ id: user.id, email: user.email, name: user.name }));
+          return { data: user };
+        },
+        after: async (user) => {
+          console.log("[AUTH DEBUG] DB hook: user CREATED:", JSON.stringify({ id: user.id, email: user.email }));
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          console.log("[AUTH DEBUG] DB hook: CREATING session for userId:", session.userId);
+          return { data: session };
+        },
       },
     },
   },
