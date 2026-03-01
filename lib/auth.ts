@@ -25,6 +25,17 @@ export const auth = betterAuth({
 
   emailAndPassword: { enabled: true },
 
+  // Enable account linking so Microsoft login links to existing users
+  // instead of creating duplicates. Without this, a user who registered
+  // with email/password as "jijo.antony@cyberloop.ai" would get a
+  // SECOND user record when logging in via Microsoft.
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["microsoft"],
+    },
+  },
+
   socialProviders: {
     microsoft: {
       clientId: process.env.MICROSOFT_CLIENT_ID as string,
