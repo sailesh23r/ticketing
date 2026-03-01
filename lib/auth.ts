@@ -32,13 +32,23 @@ export const auth = betterAuth({
       tenantId: '3bfbf68b-280a-4c52-8d23-e72ef5818d23',
       authority: `https://login.microsoftonline.com`,
       prompt: "login",
-      mapProfileToUser : (profile) => {
-        console.log(profile.email, "profile email from micorsoft");
+      mapProfileToUser: (profile) => {
+        const originalEmail = profile.email;
+        const lowered = (profile.email ?? "").toLowerCase();
+        console.log("[AUTH] mapProfileToUser:", originalEmail, "→", lowered);
         return {
-          email: profile.email?.toLowerCase(),
-        }
+          email: lowered,
+          name: profile.name,
+          image: profile.picture,
+        };
       },
     },
+  },
+
+  // Enable verbose logging to catch errors
+  logger: {
+    disabled: false,
+    level: "debug",
   },
 
   // Database hooks to log user lookups
