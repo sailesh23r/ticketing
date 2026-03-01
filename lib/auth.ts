@@ -32,20 +32,11 @@ export const auth = betterAuth({
       tenantId: '3bfbf68b-280a-4c52-8d23-e72ef5818d23',
       authority: `https://login.microsoftonline.com`,
       prompt: "login",
-      // Force email to lowercase so it matches existing DB records
-      mapProfileToUser: (profile) => {
-        console.log("[AUTH DEBUG] mapProfileToUser called with profile:", JSON.stringify({
-          email: profile.email,
-          name: profile.name,
-          id: profile.sub ?? profile.id,
-        }));
-        const mapped = {
-          email: (profile.email ?? "").toLowerCase(),
-          name: profile.name,
-          image: profile.picture,
-        };
-        console.log("[AUTH DEBUG] mapProfileToUser returning:", JSON.stringify(mapped));
-        return mapped;
+      mapProfileToUser : (profile) => {
+        console.log(profile.email, "profile email from micorsoft");
+        return {
+          email: profile.email?.toLowerCase(),
+        }
       },
     },
   },
