@@ -82,6 +82,9 @@ export const auth = betterAuth({
           console.log("[AUTH DEBUG] DB hook: CREATING session for userId:", session.userId);
           return { data: session };
         },
+        after: async (session) => {
+          console.log("[AUTH DEBUG] DB hook: session CREATED successfully:", JSON.stringify({ id: session.id, userId: session.userId }));
+        },
       },
     },
   },
@@ -99,14 +102,16 @@ export const auth = betterAuth({
       },
     }),
     customSession(async ({ user, session }) => {
+      console.log("[AUTH DEBUG] customSession called for user:", user.id, user.email);
       try {
         const role = await getUserDetails(session.userId);
+        console.log("[AUTH DEBUG] customSession role resolved:", role, "for user:", user.id);
         return {
           user: { ...user, role: role ?? "user", newField: "newField" },
           session,
         };
       } catch (e) {
-        console.error("customSession error for user", session.userId, e);
+        console.error("[AUTH DEBUG] customSession CRASHED for user", session.userId, e);
         return {
           user: { ...user, role: "user", newField: "newField" },
           session,
