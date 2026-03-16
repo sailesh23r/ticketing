@@ -51,6 +51,7 @@ export const auth = betterAuth({
           email: lowered,
           name: profile.name,
           image: profile.picture,
+          emailVerified: true,
         };
       },
     },
