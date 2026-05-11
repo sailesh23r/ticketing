@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const email = "testuser@gmail.com";
-  const password = "12345678";
+  const password = "user123";
   const name = "Test User";
 
   try {
