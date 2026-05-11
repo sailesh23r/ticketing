@@ -11,53 +11,49 @@ export async function GET() {
     console.log(`[SETUP] Checking if user ${email} exists...`);
     
     // 1. Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    let existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      // Update role just in case
+      // Ensure role is admin
       await prisma.user.update({
         where: { id: existingUser.id },
         data: { role: "admin" },
       });
       
-      return NextResponse.json({ 
-        message: "User already exists. Role has been ensured as 'admin'.", 
-        user: { email: existingUser.email, id: existingUser.id } 
+      console.log(`[SETUP] User ${email} already exists. Role updated to admin.`);
+    } else {
+      // 2. Create the user using Better Auth API
+      console.log(`[SETUP] Creating new user ${email}...`);
+      const result = await auth.api.signUpEmail({
+        body: {
+          email,
+          password,
+          name,
+        },
       });
+
+      if (!result) {
+        throw new Error("Failed to create user via Better Auth API");
+      }
+      
+      // 3. Ensure the user has the 'admin' role (Better Auth might default to 'user')
+      await prisma.user.update({
+        where: { email },
+        data: { role: "admin" },
+      });
+      
+      existingUser = await prisma.user.findUnique({ where: { email } });
     }
-
-    // 2. Create the user using Better Auth API to handle password hashing
-    console.log(`[SETUP] Creating user ${email}...`);
-    const user = await auth.api.signUpEmail({
-      body: {
-        email,
-        password,
-        name,
-      },
-    });
-
-    if (!user) {
-      throw new Error("Failed to create user via Better Auth API");
-    }
-
-    // 3. Ensure the user has the 'admin' role in the database
-    await prisma.user.update({
-      where: { email },
-      data: { role: "admin" },
-    });
-
-    console.log(`[SETUP] Admin user created successfully: ${email}`);
 
     return NextResponse.json({
       success: true,
-      message: "Admin user created successfully!",
-      credentials: {
-        email,
-        password,
-      },
-      user: user.user
+      message: "Admin setup completed successfully!",
+      user: {
+        email: existingUser?.email,
+        role: "admin"
+      }
     });
 
   } catch (error: any) {
