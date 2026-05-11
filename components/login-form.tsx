@@ -110,6 +110,7 @@ export function LoginForm({
         return;
       }
 
+      /*
       // Session exists -> either 2FA not enabled (offer to enable) or enabled but not required.
       const twoFactorEnabled = Boolean((session.data.user as SessionUser)?.twoFactorEnabled);
       if (!twoFactorEnabled) {
@@ -124,6 +125,7 @@ export function LoginForm({
         }
         return;
       }
+      */
 
       // Session exists and 2FA already enabled (no OTP required) -> proceed
       toast.success("Login successful");
